@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>HumanoidOS — Konnex Humanoid Control Subnet</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;500;700&family=Barlow:wght@300;400;500;600;700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@polkadot/api@10.11.1/bundle-polkadot-api.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0a0800;--bg2:#0f0c00;--panel:#120f02;--panel2:#1a1500;
+  --border:#2a2200;--border2:#3d3300;
+  --orange:#ff6b00;--orange2:#ff4500;--amber:#ffb300;--red:#ff2200;
+  --green:#39ff14;--cyan:#00ffcc;
+  --white:#f5f0e8;--muted:#6b5f3a;--muted2:#8a7a50;
+  --ff:'Barlow',sans-serif;--mono:'JetBrains Mono',monospace;--display:'Bebas Neue',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--white);font-family:var(--ff);min-height:100vh;overflow-x:hidden;cursor:crosshair;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px);}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 60% 40% at 50% 0%,#ff6b0010 0%,transparent 60%);}
+.gridbg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:60px 60px;opacity:.35;}
+nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;
+  padding:0 2rem;height:58px;background:rgba(10,8,0,.96);border-bottom:1px solid var(--border2);}
+.logo{font-family:var(--display);font-size:1.6rem;letter-spacing:4px;color:var(--orange);
+  text-shadow:0 0 20px #ff6b0060;}
+.logo span{color:var(--white);opacity:.5;}
+.nav-c{display:flex;align-items:center;gap:.5rem;}
+.npill{display:flex;align-items:center;gap:5px;border:1px solid var(--border2);
+  padding:4px 10px;font-family:var(--mono);font-size:.6rem;color:var(--muted2);
+  text-transform:uppercase;letter-spacing:1px;}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 8px var(--green);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+#wbtn{display:flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--border2);
+  padding:7px 14px;font-family:var(--mono);font-size:.68rem;color:var(--muted2);
+  cursor:crosshair;transition:all .15s;text-transform:uppercase;letter-spacing:1px;
+  clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);}
+#wbtn:hover{border-color:var(--orange);color:var(--orange);box-shadow:0 0 15px #ff6b0030;}
+#wbtn.on{border-color:var(--green);color:var(--green);box-shadow:0 0 15px #39ff1430;}
+.tabs{display:flex;border-bottom:1px solid var(--border2);background:rgba(10,8,0,.8);
+  padding:0 2rem;overflow-x:auto;position:sticky;top:58px;z-index:190;}
+.tabs::-webkit-scrollbar{height:2px;}
+.tabs::-webkit-scrollbar-thumb{background:var(--orange);}
+.tab{padding:12px 16px;cursor:crosshair;white-space:nowrap;font-family:var(--mono);
+  font-size:.62rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);
+  border-bottom:2px solid transparent;transition:all .15s;}
+.tab:hover{color:var(--white);}
+.tab.active{color:var(--orange);border-bottom-color:var(--orange);text-shadow:0 0 10px #ff6b0080;}
+.page{display:none;padding:2rem;max-width:1400px;margin:0 auto;position:relative;z-index:1;animation:pi .2s ease;}
+.page.active{display:block;}
+@keyframes pi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.sh{font-family:var(--display);font-size:1.1rem;letter-spacing:4px;color:var(--orange);
+  margin-bottom:1rem;display:flex;align-items:center;gap:.8rem;text-shadow:0 0 15px #ff6b0050;}
+.sh::before{content:'//';color:var(--muted);font-size:.8rem;}
+.sh::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--orange)60,transparent);}
+.panel{background:var(--panel);border:1px solid var(--border2);padding:1.4rem;margin-bottom:1.2rem;position:relative;
+  clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,var(--orange),transparent);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;}
+@media(max-width:800px){.g2{grid-template-columns:1fr;}}
+.srow{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.sc{background:var(--panel2);border:1px solid var(--border2);padding:1.1rem;position:relative;overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);}
+.sc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--orange)80,transparent);}
+.sc-l{font-family:var(--mono);font-size:.57rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);margin-bottom:.4rem;}
+.sc-v{font-family:var(--display);font-size:2.1rem;line-height:1;text-shadow:0 0 20px currentColor;}
+.sc-s{font-family:var(--mono);font-size:.57rem;color:var(--muted);margin-top:.3rem;}
+.co{color:var(--orange);}.cg{color:var(--green);}.ca{color:var(--amber);}.cr{color:var(--red);}.cc{color:var(--cyan);}
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:.75rem;}
+th{text-align:left;padding:.5rem .75rem;font-family:var(--mono);font-size:.57rem;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted2);border-bottom:1px solid var(--border2);}
+td{padding:.65rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#1a1500;}
+.b{display:inline-flex;align-items:center;padding:2px 6px;font-family:var(--mono);font-size:.59rem;
+  font-weight:700;text-transform:uppercase;letter-spacing:1px;border:1px solid;white-space:nowrap;}
+.bo{background:#ff6b0015;color:var(--orange);border-color:#ff6b0040;}
+.bg{background:#39ff1415;color:var(--green);border-color:#39ff1440;}
+.ba{background:#ffb30015;color:var(--amber);border-color:#ffb30040;}
+.br{background:#ff220015;color:var(--red);border-color:#ff220040;}
+.bc{background:#00ffcc15;color:var(--cyan);border-color:#00ffcc40;}
+.bm{background:#2a220015;color:var(--muted2);border-color:var(--border2);}
+.bar{height:3px;background:var(--border2);margin-top:4px;min-width:55px;}
+.barf{height:100%;transition:width .5s;}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;}
+@media(max-width:560px){.fg{grid-template-columns:1fr;}}
+.fgrp{margin-bottom:.8rem;}
+.fl{font-family:var(--mono);font-size:.57rem;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted2);display:block;margin-bottom:.3rem;}
+input,select,textarea{width:100%;background:#0a0800;border:1px solid var(--border2);
+  padding:.55rem .8rem;color:var(--white);font-family:var(--mono);font-size:.74rem;outline:none;transition:.15s;
+  clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);}
+input:focus,select:focus,textarea:focus{border-color:var(--orange);box-shadow:0 0 0 1px #ff6b0020;}
+textarea{min-height:65px;resize:vertical;clip-path:none;}
+select option{background:#0f0c00;}
+.btn{padding:.6rem 1.4rem;border:1px solid;cursor:crosshair;font-family:var(--mono);
+  font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  transition:all .15s;display:inline-flex;align-items:center;gap:6px;
+  clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);}
+.btnp{background:var(--orange);border-color:var(--orange);color:#000;}
+.btnp:hover{background:var(--amber);border-color:var(--amber);box-shadow:0 0 20px #ff6b0050;}
+.btnp:disabled{opacity:.4;cursor:not-allowed;}
+.btns{background:transparent;border-color:var(--border2);color:var(--muted2);}
+.btns:hover{border-color:var(--orange);color:var(--orange);}
+.wf{width:100%;}
+.frow{display:flex;gap:.6rem;align-items:flex-end;flex-wrap:wrap;}
+.al{padding:.65rem .9rem;font-family:var(--mono);font-size:.67rem;margin-bottom:.8rem;line-height:1.5;border-left:3px solid;}
+.als{background:#39ff1408;border-color:var(--green);color:var(--green);}
+.ale{background:#ff220008;border-color:var(--red);color:var(--red);}
+.ali{background:#ff6b0008;border-color:var(--orange);color:var(--orange);}
+.alw{background:#ffb30008;border-color:var(--amber);color:var(--amber);}
+.log{background:#050400;border:1px solid var(--border2);padding:.8rem;height:190px;overflow-y:auto;
+  font-family:var(--mono);font-size:.64rem;}
+.log::-webkit-scrollbar{width:3px;}.log::-webkit-scrollbar-thumb{background:var(--orange);}
+.ll{padding:1px 0;}.lok{color:var(--green);}.li{color:var(--orange);}.lw{color:var(--amber);}.le{color:var(--red);}
+.mono{font-family:var(--mono);font-size:.68rem;color:var(--orange);}
+.empty{color:var(--muted);font-family:var(--mono);font-size:.67rem;text-align:center;padding:2rem 1rem;letter-spacing:1px;}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--border2);
+  border-top-color:var(--orange);animation:sp .6s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg)}}
+#toasts{position:fixed;bottom:1.2rem;right:1.2rem;z-index:9999;display:flex;flex-direction:column;gap:.4rem;}
+.toast{padding:.65rem 1rem;border:1px solid;border-left:3px solid;font-family:var(--mono);font-size:.67rem;
+  min-width:190px;display:flex;align-items:center;gap:.5rem;background:var(--panel);
+  animation:tin .2s ease;letter-spacing:.5px;}
+@keyframes tin{from{transform:translateX(80%);opacity:0}to{transform:none;opacity:1}}
+.ts{border-color:#39ff1440;border-left-color:var(--green);color:var(--green);}
+.te{border-color:#ff220040;border-left-color:var(--red);color:var(--red);}
+.ti{border-color:#ff6b0040;border-left-color:var(--orange);color:var(--orange);}
+.tw2{border-color:#ffb30040;border-left-color:var(--amber);color:var(--amber);}
+.overlay{position:fixed;inset:0;background:rgba(5,4,0,.93);backdrop-filter:blur(4px);
+  z-index:500;display:none;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--panel);border:1px solid var(--border2);border-top:2px solid var(--orange);
+  padding:1.8rem;width:420px;max-width:94vw;animation:pi .2s ease;position:relative;}
+.modal::before{content:'WALLET.CONNECT';position:absolute;top:-1px;left:1rem;
+  font-family:var(--mono);font-size:.53rem;letter-spacing:3px;
+  color:var(--bg);background:var(--orange);padding:1px 8px;}
+.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;margin-top:.5rem;}
+.mt{font-family:var(--display);font-size:1.4rem;letter-spacing:3px;}
+.mx{background:none;border:1px solid var(--border2);color:var(--muted2);cursor:crosshair;
+  font-size:.9rem;padding:3px 7px;transition:.15s;}
+.mx:hover{border-color:var(--red);color:var(--red);}
+.msub{font-family:var(--mono);font-size:.66rem;color:var(--muted2);margin-bottom:1.2rem;line-height:1.6;letter-spacing:.3px;}
+.wo{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--border2);
+  background:var(--panel2);cursor:crosshair;transition:all .15s;margin-bottom:.6rem;}
+.wo:hover{border-color:var(--orange);background:#1a1500;}
+.wicon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  font-size:1rem;flex-shrink:0;border:1px solid var(--border2);}
+.wname{font-family:var(--mono);font-size:.73rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+.wdesc{font-family:var(--mono);font-size:.59rem;color:var(--muted2);}
+.wtag{margin-left:auto;padding:2px 6px;font-family:var(--mono);font-size:.54rem;font-weight:700;letter-spacing:1px;border:1px solid;}
+.trec{background:#39ff1410;color:var(--green);border-color:#39ff1440;}
+.tpop{background:#ff6b0010;color:var(--orange);border-color:#ff6b0040;}
+.no-ext{font-family:var(--mono);font-size:.64rem;color:var(--amber);background:#ffb30008;
+  border-left:2px solid var(--amber);padding:.6rem .8rem;margin-top:.5rem;display:none;line-height:1.6;}
+.winfo{background:#050400;border:1px solid var(--border2);padding:.8rem;margin-top:.3rem;}
+.wir{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.64rem;margin-bottom:.3rem;}
+.wir:last-child{margin-bottom:0;}
+.wik{color:var(--muted2);text-transform:uppercase;letter-spacing:1px;}
+.wiv{color:var(--white);}
+.disc{margin-top:.8rem;width:100%;padding:.55rem;background:transparent;border:1px solid var(--border2);
+  font-family:var(--mono);font-size:.64rem;color:var(--muted2);cursor:crosshair;
+  letter-spacing:1px;text-transform:uppercase;transition:.15s;}
+.disc:hover{border-color:var(--red);color:var(--red);}
+/* HERO */
+.hero{min-height:88vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;padding:2rem;position:relative;overflow:hidden;}
+.humanoid-svg{width:130px;height:170px;margin:0 auto 2rem;animation:float 4s ease-in-out infinite;position:relative;z-index:1;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.hp{fill:none;stroke:var(--orange);stroke-width:2;}
+.hj{fill:var(--orange);opacity:.8;}
+.hero-eye{font-family:var(--mono);font-size:.63rem;letter-spacing:4px;text-transform:uppercase;
+  color:var(--orange);margin-bottom:.9rem;display:inline-flex;align-items:center;gap:.5rem;position:relative;z-index:1;}
+.hero-h{font-family:var(--display);font-size:clamp(3rem,9vw,7rem);letter-spacing:8px;
+  line-height:.95;margin-bottom:.9rem;position:relative;z-index:1;
+  color:var(--white);text-shadow:0 0 40px #ff6b0030;}
+.hero-h span{color:var(--orange);text-shadow:0 0 30px #ff6b0080;}
+.hero-sub{font-size:.95rem;color:var(--muted2);max-width:500px;margin:0 auto 1.8rem;
+  line-height:1.7;position:relative;z-index:1;font-weight:300;letter-spacing:.5px;}
+.hero-acts{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap;position:relative;z-index:1;}
+/* CORNER DECO */
+.ctlr,.ctrr,.cblr,.cbrr{position:absolute;width:18px;height:18px;}
+.ctlr{top:0;left:0;border-top:2px solid var(--orange);border-left:2px solid var(--orange);}
+.ctrr{top:0;right:0;border-top:2px solid var(--orange);border-right:2px solid var(--orange);}
+.cblr{bottom:0;left:0;border-bottom:2px solid var(--orange);border-left:2px solid var(--orange);}
+.cbrr{bottom:0;right:0;border-bottom:2px solid var(--orange);border-right:2px solid var(--orange);}
+/* FEATURES */
+.feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;
+  background:var(--border2);border:1px solid var(--border2);}
+.feat{background:var(--panel);padding:1.3rem;position:relative;transition:.2s;}
+.feat:hover{background:var(--panel2);}
+.feat::before{content:attr(data-n);position:absolute;top:.8rem;right:.8rem;
+  font-family:var(--display);font-size:2rem;color:var(--border2);letter-spacing:2px;}
+.fnum{font-family:var(--display);font-size:.88rem;color:var(--orange);letter-spacing:3px;margin-bottom:.5rem;}
+.fname{font-size:.86rem;font-weight:700;margin-bottom:.3rem;text-transform:uppercase;letter-spacing:1px;}
+.fdesc{font-size:.71rem;color:var(--muted2);line-height:1.6;font-weight:300;}
+/* MOTION GRID */
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--border2);}
+.mc{background:var(--panel);padding:1rem;text-align:center;border-bottom:3px solid transparent;transition:.2s;}
+.mc:hover{border-bottom-color:var(--orange);background:var(--panel2);}
+.mi{font-size:1.5rem;margin-bottom:.4rem;}
+.mn{font-family:var(--mono);font-size:.66rem;color:var(--orange);text-transform:uppercase;letter-spacing:2px;margin-bottom:.2rem;}
+.md{font-size:.63rem;color:var(--muted2);}
+/* ROBOT CARDS */
+.rcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem;}
+.rcard{background:var(--panel);border:1px solid var(--border2);padding:1.2rem;
+  cursor:crosshair;transition:all .15s;position:relative;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));}
+.rcard:hover{border-color:var(--orange);background:var(--panel2);}
+.rcard::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,var(--orange),transparent);}
+.rcid{font-family:var(--mono);font-size:.54rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:.5rem;}
+.rcname{font-family:var(--display);font-size:1.3rem;letter-spacing:3px;margin-bottom:.2rem;}
+.rctype{font-family:var(--mono);font-size:.58rem;color:var(--orange);text-transform:uppercase;letter-spacing:2px;margin-bottom:.75rem;}
+.rcstats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;}
+.rst{background:#050400;border:1px solid var(--border);padding:.5rem;text-align:center;}
+.rstv{font-family:var(--display);font-size:1.1rem;}
+.rstl{font-family:var(--mono);font-size:.51rem;color:var(--muted2);text-transform:uppercase;letter-spacing:1px;}
+/* TX STATUS */
+.txs{background:#050400;border-left:2px solid var(--orange);padding:.8rem;font-family:var(--mono);font-size:.64rem;}
+.txr{display:flex;justify-content:space-between;margin-bottom:.3rem;}
+.txr:last-child{margin-bottom:0;}
+.txk{color:var(--muted2);text-transform:uppercase;letter-spacing:1px;}
+.txv{color:var(--white);word-break:break-all;max-width:65%;text-align:right;}
+.txlnk{color:var(--orange);text-decoration:none;}
+.txlnk:hover{text-shadow:0 0 8px var(--orange);}
+.ir{display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--border);}
+.ir:last-child{border-bottom:none;}
+.ik{font-family:var(--mono);font-size:.63rem;color:var(--muted2);text-transform:uppercase;letter-spacing:1px;}
+.iv{font-family:var(--mono);font-size:.66rem;word-break:break-all;max-width:60%;text-align:right;}
+.wbanner{display:none;align-items:center;gap:.8rem;border-left:3px solid var(--amber);
+  background:#ffb30008;padding:.8rem 1rem;margin-bottom:1rem;
+  font-family:var(--mono);font-size:.66rem;color:var(--amber);letter-spacing:.5px;}
+.wbanner.show{display:flex;}
+.mchart{height:50px;display:flex;align-items:flex-end;gap:3px;}
+.mbar{flex:1;min-width:6px;opacity:.85;}
+.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--border2);}
+.tierc{background:var(--panel);padding:.9rem;text-align:center;}
+.tiern{font-family:var(--display);font-size:1rem;letter-spacing:3px;margin-top:.3rem;}
+.tierr{font-family:var(--mono);font-size:.57rem;color:var(--muted2);margin-top:.2rem;}
+@media(max-width:600px){nav{padding:0 1rem;}.page{padding:1rem;}.nav-c{display:none;}.hero-h{font-size:3rem;}}
+.mt1{margin-top:.6rem;}.mt2{margin-top:1.2rem;}
+</style>
+</head>
+<body>
+<div class="gridbg"></div>
+<div id="toasts"></div>
+
+<!-- WALLET MODAL -->
+<div class="overlay" id="wmodal">
+  <div class="modal">
+    <div class="mh">
+      <div class="mt" id="mtitle">CONNECT WALLET</div>
+      <button class="mx" onclick="closeModal()">✕</button>
+    </div>
+    <div id="mconn">
+      <p class="msub">Connect a Substrate wallet extension to sign real on-chain transactions on Konnex Testnet. Real signatures only — no demo addresses.</p>
+      <div class="wo" onclick="connectExt('subwallet-js','SubWallet')">
+        <div class="wicon" style="background:#001a40">🔷</div>
+        <div><div class="wname">SubWallet</div><div class="wdesc">Best for Konnex — Substrate + EVM</div></div>
+        <div class="wtag trec">REC</div>
+      </div>
+      <div class="wo" onclick="connectExt('talisman','Talisman')">
+        <div class="wicon" style="background:#300000">🔴</div>
+        <div><div class="wname">Talisman</div><div class="wdesc">Multichain Polkadot wallet</div></div>
+        <div class="wtag tpop">POP</div>
+      </div>
+      <div class="wo" onclick="connectExt('polkadot-js','Polkadot{.js}')">
+        <div class="wicon" style="background:#1a0010">🟣</div>
+        <div><div class="wname">Polkadot{.js}</div><div class="wdesc">Official browser extension</div></div>
+      </div>
+      <div class="wo" onclick="connectExt('fearless','Fearless Wallet')">
+        <div class="wicon" style="background:#1a0a00">🟠</div>
+        <div><div class="wname">Fearless Wallet</div><div class="wdesc">Mobile-first Polkadot wallet</div></div>
+      </div>
+      <div class="no-ext" id="no-ext">
+        ⚠ <strong id="no-ext-name">This wallet</strong> is not installed.<br/>
+        Install from official website, refresh, then try again.
+      </div>
+    </div>
+    <div id="mconn2" style="display:none">
+      <div class="winfo" id="winfo"></div>
+      <button class="disc" onclick="disconnect()">// DISCONNECT WALLET</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">Humanoid<span>OS</span></div>
+  <div class="nav-c">
+    <div class="npill"><div class="sdot"></div>KONNEX TESTNET</div>
+    <div class="npill" id="bpill" style="display:none">BLK <span id="bnum" style="color:var(--orange)">—</span></div>
+  </div>
+  <button id="wbtn" onclick="openModal()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+      <circle cx="12" cy="14" r="2"/>
+    </svg>
+    <span id="wbtxt">CONNECT WALLET</span>
+  </button>
+</nav>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="go('home')">HOME</div>
+  <div class="tab" onclick="go('dash')">DASHBOARD</div>
+  <div class="tab" onclick="go('robots')">ROBOTS</div>
+  <div class="tab" onclick="go('tasks')">TASKS</div>
+  <div class="tab" onclick="go('memory')">MEMORY</div>
+  <div class="tab" onclick="go('joints')">JOINT CONTROL</div>
+  <div class="tab" onclick="go('validators')">⚖ VALIDATORS</div>
+  <div class="tab" onclick="go('lb')">LEADERBOARD</div>
+  <div class="tab" onclick="go('faucet')">FAUCET</div>
+  <div class="tab" onclick="go('info')">SUBNET INFO</div>
+</div>
+
+<!-- HOME -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div class="ctlr"></div><div class="ctrr"></div><div class="cblr"></div><div class="cbrr"></div>
+    <div class="humanoid-svg">
+      <svg viewBox="0 0 120 160" width="130" height="170" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="60" cy="156" rx="28" ry="4" fill="var(--orange)" opacity=".12"/>
+        <rect x="42" y="5" width="36" height="28" rx="4" class="hp"/>
+        <rect x="48" y="11" width="10" height="6" rx="1" fill="var(--orange)" opacity=".7"/>
+        <rect x="62" y="11" width="10" height="6" rx="1" fill="var(--orange)" opacity=".7"/>
+        <line x1="50" y1="24" x2="70" y2="24" stroke="var(--orange)" stroke-width="1.5" opacity=".4"/>
+        <rect x="54" y="33" width="12" height="8" class="hp"/>
+        <rect x="32" y="41" width="56" height="45" rx="3" class="hp"/>
+        <rect x="44" y="48" width="32" height="20" rx="2" fill="var(--orange)" opacity=".07"/>
+        <line x1="60" y1="48" x2="60" y2="68" stroke="var(--orange)" stroke-width="1" opacity=".35"/>
+        <circle cx="44" cy="58" r="3" fill="var(--orange)" opacity=".6"/>
+        <circle cx="76" cy="58" r="3" fill="var(--orange)" opacity=".6"/>
+        <rect x="16" y="41" width="14" height="8" rx="2" class="hp"/>
+        <rect x="10" y="49" width="12" height="30" rx="3" class="hp"/>
+        <circle cx="16" cy="49" r="3" class="hj"/>
+        <rect x="8" y="79" width="14" height="16" rx="2" class="hp"/>
+        <circle cx="15" cy="79" r="2.5" class="hj"/>
+        <rect x="90" y="41" width="14" height="8" rx="2" class="hp"/>
+        <rect x="98" y="49" width="12" height="30" rx="3" class="hp"/>
+        <circle cx="104" cy="49" r="3" class="hj"/>
+        <rect x="98" y="79" width="14" height="16" rx="2" class="hp"/>
+        <circle cx="105" cy="79" r="2.5" class="hj"/>
+        <rect x="36" y="86" width="48" height="10" rx="2" class="hp"/>
+        <rect x="36" y="96" width="18" height="35" rx="3" class="hp"/>
+        <circle cx="45" cy="96" r="3" class="hj"/>
+        <rect x="34" y="131" width="20" height="22" rx="3" class="hp"/>
+        <circle cx="44" cy="131" r="2.5" class="hj"/>
+        <rect x="66" y="96" width="18" height="35" rx="3" class="hp"/>
+        <circle cx="75" cy="96" r="3" class="hj"/>
+        <rect x="66" y="131" width="20" height="22" rx="3" class="hp"/>
+        <circle cx="76" cy="131" r="2.5" class="hj"/>
+      </svg>
+    </div>
+    <div class="hero-eye"><div class="sdot"></div>KONNEX SUBNET // HUMANOID CONTROL</div>
+    <h1 class="hero-h">HUMANOID<br/><span>OS</span></h1>
+    <p class="hero-sub">On-chain control layer for bipedal robots. Every motion policy mined, every execution scored via Proof-of-Physical-Work on Konnex Testnet.</p>
+    <div class="hero-acts">
+      <button class="btn btnp" onclick="openModal()">// CONNECT WALLET</button>
+      <button class="btn btns" onclick="go('dash')">VIEW DASHBOARD</button>
+      <button class="btn btns" onclick="go('robots')">REGISTER ROBOT</button>
+    </div>
+  </div>
+  <div style="max-width:1300px;margin:0 auto;padding:0 1rem 3rem;position:relative;z-index:1;">
+    <div class="sh">CONTROL PRIMITIVES</div>
+    <div class="feats">
+      <div class="feat" data-n="01"><div class="fnum">// 01</div><div class="fname">Humanoid Identity</div><div class="fdesc">Each bipedal robot gets a cryptographic on-chain ID from hardware fingerprint + joint calibration hash + owner wallet. Signed and stored on Konnex via extrinsic.</div></div>
+      <div class="feat" data-n="02"><div class="fnum">// 02</div><div class="fname">Motion Memory</div><div class="fdesc">Verified gait patterns, balance corrections, and manipulation sequences stored as PoPW artifacts on-chain. Miners use history to improve future motion policies.</div></div>
+      <div class="feat" data-n="03"><div class="fnum">// 03</div><div class="fname">PoPW Scoring</div><div class="fdesc">Validators score execution on stability (40%), task completion (35%), and energy efficiency (25%). Scores finalized on-chain permanently.</div></div>
+      <div class="feat" data-n="04"><div class="fnum">// 04</div><div class="fname">Policy Mining</div><div class="fdesc">Miners generate joint-level motion policies from robot memory. Memory-enhanced policies show measurably better PoPW scores across locomotion tasks.</div></div>
+      <div class="feat" data-n="05"><div class="fnum">// 05</div><div class="fname">Reputation Ledger</div><div class="fdesc">Each humanoid earns a live reputation score after every verified task. Enterprises query this before deploying robots to high-stakes missions.</div></div>
+      <div class="feat" data-n="06"><div class="fnum">// 06</div><div class="fname">Cross-Subnet Ready</div><div class="fdesc">HumanoidOS identities queryable by MemoryMesh, SLAM, and fleet subnets — creating a unified robot identity layer across all of Konnex.</div></div>
+    </div>
+    <div class="sh" style="margin-top:2rem">MOTION CATEGORIES</div>
+    <div class="panel">
+      <div class="mgrid">
+        <div class="mc"><div class="mi">🚶</div><div class="mn">Locomotion</div><div class="md">Walk, run, climb, navigate terrain</div></div>
+        <div class="mc"><div class="mi">🤸</div><div class="mn">Balance</div><div class="md">Dynamic stability, recovery, posture</div></div>
+        <div class="mc"><div class="mi">🤲</div><div class="mn">Manipulation</div><div class="md">Grasp, place, assemble, tool use</div></div>
+        <div class="mc"><div class="mi">🔄</div><div class="mn">Whole-Body</div><div class="md">Coordinated multi-limb tasks</div></div>
+        <div class="mc"><div class="mi">🧗</div><div class="mn">Agility</div><div class="md">Jump, duck, squeeze, vault</div></div>
+        <div class="mc"><div class="mi">🤝</div><div class="mn">Interaction</div><div class="md">Human-safe handoffs, collaboration</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="page-dash" class="page">
+  <div class="srow">
+    <div class="sc"><div class="sc-l">Robots Online</div><div class="sc-v co" id="d-robots">0</div><div class="sc-s">Registered humanoids</div></div>
+    <div class="sc"><div class="sc-l">Tasks Completed</div><div class="sc-v cg" id="d-done">0</div><div class="sc-s">PoPW verified</div></div>
+    <div class="sc"><div class="sc-l">Open Tasks</div><div class="sc-v ca" id="d-open">0</div><div class="sc-s">Awaiting miners</div></div>
+    <div class="sc"><div class="sc-l">Motion Logs</div><div class="sc-v cc" id="d-mem">0</div><div class="sc-s">On-chain memory</div></div>
+    <div class="sc"><div class="sc-l">Avg PoPW</div><div class="sc-v cg" id="d-avg">—</div><div class="sc-s">Network average</div></div>
+    <div class="sc"><div class="sc-l">Rewards Paid</div><div class="sc-v co" id="d-rew">0</div><div class="sc-s">testKNX distributed</div></div>
+  </div>
+  <div class="g2">
+    <div class="panel">
+      <div class="sh">RECENT PoPW EVENTS</div>
+      <div class="tw"><table>
+        <thead><tr><th>Robot</th><th>Motion</th><th>PoPW Score</th><th>Block</th><th>Tx</th></tr></thead>
+        <tbody id="d-popw"><tr><td colspan="5" class="empty">// NO EVENTS — CONNECT WALLET AND REGISTER A ROBOT</td></tr></tbody>
+      </table></div>
+    </div>
+    <div class="panel">
+      <div class="sh">ACTIVITY LOG</div>
+      <div class="log" id="act-log">
+        <div class="ll li">// HUMANOIDОS v0.1.0 INITIALIZED</div>
+        <div class="ll li">// AWAITING WALLET CONNECTION</div>
+      </div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="panel">
+      <div class="sh">TASK DISTRIBUTION</div>
+      <div id="d-dist" style="display:flex;gap:1px;flex-wrap:wrap;background:var(--border2);min-height:48px;">
+        <div class="empty" style="padding:.5rem;font-size:.62rem;background:var(--panel)">// NO TASKS YET</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="sh">POPW SCORE TREND</div>
+      <div class="mchart" id="d-trend"><div class="empty" style="font-size:.62rem">// NO DATA</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ROBOTS -->
+<div id="page-robots" class="page">
+  <div class="wbanner" id="wb-r">// WALLET NOT CONNECTED — REGISTRATION REQUIRES ON-CHAIN SIGNATURE
+    <button class="btn btns" style="font-size:.59rem;padding:.35rem .8rem;margin-left:auto" onclick="openModal()">CONNECT</button>
+  </div>
+  <div class="panel">
+    <div class="sh">REGISTER HUMANOID ON-CHAIN</div>
+    <p style="font-family:var(--mono);font-size:.63rem;color:var(--muted2);margin-bottom:1rem;line-height:1.6">
+      Submits a signed <span style="color:var(--orange)">system.remark</span> extrinsic to Konnex Testnet. Wallet signs — nothing stored locally.
+    </p>
+    <div class="fg">
+      <div class="fgrp"><label class="fl">Robot Name / Callsign</label><input id="r-name" placeholder="e.g. ATLAS-01 or Optimus-X"/></div>
+      <div class="fgrp"><label class="fl">Manufacturer / Model</label><input id="r-model" placeholder="e.g. Figure-01, Tesla Optimus"/></div>
+      <div class="fgrp"><label class="fl">Serial Number</label><input id="r-serial" placeholder="e.g. FIG-2025-001"/></div>
+      <div class="fgrp"><label class="fl">Humanoid Type</label>
+        <select id="r-type">
+          <option value="bipedal_general">🚶 Bipedal General Purpose</option>
+          <option value="bipedal_industrial">🏭 Bipedal Industrial</option>
+          <option value="bipedal_collaborative">🤝 Bipedal Collaborative</option>
+          <option value="bipedal_research">🔬 Bipedal Research</option>
+          <option value="android">🤖 Android</option>
+        </select>
+      </div>
+      <div class="fgrp"><label class="fl">DOF</label>
+        <select id="r-dof"><option value="28">28 DOF — Standard</option><option value="36">36 DOF — Advanced</option><option value="43">43 DOF — High Dexterity</option><option value="55">55 DOF — Research</option></select>
+      </div>
+      <div class="fgrp"><label class="fl">Actuator Type</label>
+        <select id="r-act"><option value="electric">⚡ Electric Servo</option><option value="hydraulic">💧 Hydraulic</option><option value="pneumatic">💨 Pneumatic</option><option value="sma">🌀 Shape Memory Alloy</option></select>
+      </div>
+    </div>
+    <div id="r-al"></div>
+    <div style="display:flex;gap:.7rem;flex-wrap:wrap">
+      <button class="btn btnp" id="r-btn" onclick="registerRobot()">// SIGN & REGISTER ON-CHAIN</button>
+      <button class="btn btns" onclick="autofillR()">AUTO-FILL EXAMPLE</button>
+    </div>
+    <div id="r-tx" class="txs mt1" style="display:none"></div>
+  </div>
+  <div class="panel">
+    <div class="sh">REGISTERED HUMANOIDS</div>
+    <div id="robots-grid" class="rcards"><div class="empty">// NO HUMANOIDS — CONNECT WALLET AND REGISTER ABOVE</div></div>
+  </div>
+</div>
+
+<!-- TASKS -->
+<div id="page-tasks" class="page">
+  <div class="wbanner" id="wb-t">// WALLET NOT CONNECTED — TASK SUBMISSION REQUIRES ON-CHAIN SIGNATURE
+    <button class="btn btns" style="font-size:.59rem;padding:.35rem .8rem;margin-left:auto" onclick="openModal()">CONNECT</button>
+  </div>
+  <div class="g2">
+    <div>
+      <div class="panel">
+        <div class="sh">SUBMIT MOTION TASK ON-CHAIN</div>
+        <div class="fgrp"><label class="fl">Task Instruction</label>
+          <textarea id="t-instr" placeholder="e.g. Walk 50m across uneven terrain, pick up object from floor, place on shelf at 1.5m height"></textarea>
+        </div>
+        <div class="fg">
+          <div class="fgrp"><label class="fl">Motion Type</label>
+            <select id="t-type">
+              <option value="locomotion">🚶 Locomotion</option>
+              <option value="balance">🤸 Balance / Recovery</option>
+              <option value="manipulation">🤲 Manipulation</option>
+              <option value="whole_body">🔄 Whole-Body</option>
+              <option value="agility">🧗 Agility</option>
+              <option value="interaction">🤝 Human Interaction</option>
+            </select>
+          </div>
+          <div class="fgrp"><label class="fl">Reward (testKNX)</label><input id="t-reward" type="number" value="15" min="0" step="1"/></div>
+          <div class="fgrp"><label class="fl">Assign Robot</label><select id="t-robot"><option value="">Any humanoid</option></select></div>
+          <div class="fgrp"><label class="fl">Difficulty</label>
+            <select id="t-diff"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option><option value="extreme">Extreme</option></select>
+          </div>
+        </div>
+        <div id="t-al"></div>
+        <div style="display:flex;gap:.7rem;flex-wrap:wrap">
+          <button class="btn btnp" id="t-btn" onclick="postTask()">// SIGN & SUBMIT TASK</button>
+          <button class="btn btns" onclick="autofillT()">AUTO-FILL EXAMPLE</button>
+        </div>
+        <div id="t-tx" class="txs mt1" style="display:none"></div>
+      </div>
+      <div class="panel mt2">
+        <div class="sh">SUBMIT PoPW ARTIFACT</div>
+        <div class="fgrp"><label class="fl">Select Task</label><select id="exec-sel"><option value="">— Select submitted task —</option></select></div>
+        <div style="background:#050400;border:1px solid var(--border2);padding:1rem;margin-bottom:.8rem;">
+          <div style="font-family:var(--mono);font-size:.57rem;color:var(--orange);letter-spacing:3px;text-transform:uppercase;margin-bottom:.7rem;">// TELEMETRY INPUT</div>
+          <div class="fg">
+            <div class="fgrp" style="margin-bottom:.5rem"><label class="fl">Completion %</label><input id="tc-cmp" type="number" value="92" min="0" max="100"/></div>
+            <div class="fgrp" style="margin-bottom:.5rem"><label class="fl">Elapsed (s)</label><input id="tc-el" type="number" value="120" min="0"/></div>
+            <div class="fgrp" style="margin-bottom:.5rem"><label class="fl">Stability Score (0-1)</label><input id="tc-stab" type="number" value="0.88" min="0" max="1" step="0.01"/></div>
+            <div class="fgrp" style="margin-bottom:.5rem"><label class="fl">Fall Events</label><input id="tc-falls" type="number" value="0" min="0"/></div>
+            <div class="fgrp" style="margin-bottom:.5rem"><label class="fl">Joint Errors</label><input id="tc-jerr" type="number" value="0" min="0"/></div>
+            <div class="fgrp" style="margin-bottom:.5rem"><label class="fl">Energy Used (J)</label><input id="tc-nrg" type="number" value="850" min="0"/></div>
+          </div>
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:.35rem;font-family:var(--mono);font-size:.63rem;cursor:crosshair"><input type="checkbox" id="tc-done" checked style="width:auto"> Completed</label>
+            <label style="display:flex;align-items:center;gap:.35rem;font-family:var(--mono);font-size:.63rem;cursor:crosshair"><input type="checkbox" id="tc-fall" style="width:auto"> Critical Fall</label>
+            <label style="display:flex;align-items:center;gap:.35rem;font-family:var(--mono);font-size:.63rem;cursor:crosshair"><input type="checkbox" id="tc-estop" style="width:auto"> Emergency Stop</label>
+            <label style="display:flex;align-items:center;gap:.35rem;font-family:var(--mono);font-size:.63rem;cursor:crosshair"><input type="checkbox" id="tc-safe" checked style="width:auto"> Human-Safe</label>
+          </div>
+        </div>
+        <div id="exec-al"></div>
+        <button class="btn btnp wf" id="exec-btn" onclick="submitPoPW()">// SIGN & SUBMIT PoPW</button>
+        <div id="exec-tx" class="txs mt1" style="display:none"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="sh">ALL MOTION TASKS</div>
+      <div class="tw"><table>
+        <thead><tr><th>#</th><th>Type</th><th>Instruction</th><th>Reward</th><th>PoPW</th><th>Status</th><th>Block</th></tr></thead>
+        <tbody id="tasks-tb"><tr><td colspan="7" class="empty">// NO TASKS SUBMITTED</td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<!-- MEMORY -->
+<div id="page-memory" class="page">
+  <div class="panel">
+    <div class="sh">QUERY MOTION MEMORY</div>
+    <div class="frow">
+      <div style="flex:1;min-width:160px"><label class="fl">Humanoid</label><select id="m-robot" style="width:100%"><option value="">Select robot</option></select></div>
+      <div style="width:140px"><label class="fl">Motion Type</label>
+        <select id="m-type"><option value="">All</option><option>locomotion</option><option>balance</option><option>manipulation</option><option>whole_body</option><option>agility</option><option>interaction</option></select>
+      </div>
+      <div style="width:100px"><label class="fl">Min Score</label><input id="m-min" type="number" value="0" min="0" max="1" step="0.1"/></div>
+      <div><button class="btn btnp" onclick="queryMem()" style="margin-top:1.2rem">QUERY</button></div>
+    </div>
+  </div>
+  <div id="m-sum" style="display:none" class="srow">
+    <div class="sc"><div class="sc-l">Entries</div><div class="sc-v co" id="ms-tot">0</div></div>
+    <div class="sc"><div class="sc-l">Avg PoPW</div><div class="sc-v cg" id="ms-avg">0</div></div>
+    <div class="sc"><div class="sc-l">Best</div><div class="sc-v ca" id="ms-best">0</div></div>
+    <div class="sc"><div class="sc-l">Worst</div><div class="sc-v cr" id="ms-worst">0</div></div>
+  </div>
+  <div class="panel">
+    <div class="sh">MOTION MEMORY ENTRIES</div>
+    <div class="tw"><table>
+      <thead><tr><th>Task ID</th><th>Type</th><th>Instruction</th><th>PoPW</th><th>Stability</th><th>Completion</th><th>Efficiency</th><th>Strategy</th><th>Block</th></tr></thead>
+      <tbody id="mem-tb"><tr><td colspan="9" class="empty">// SELECT A ROBOT AND CLICK QUERY</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- LEADERBOARD -->
+<div id="page-lb" class="page">
+  <div class="panel">
+    <div class="sh">HUMANOID REPUTATION LEADERBOARD</div>
+    <div class="tw"><table>
+      <thead><tr><th>Rank</th><th>Robot ID</th><th>Callsign</th><th>PoPW Score</th><th>Tier</th><th>Tasks</th><th>Success %</th><th>Trend</th></tr></thead>
+      <tbody id="lb-tb"><tr><td colspan="8" class="empty">// NO RANKED ROBOTS YET</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- VALIDATORS -->
+<div id="page-validators" class="page">
+
+  <!-- Stats -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="sc"><div class="sc-l">Active Validators</div><div class="sc-v co" id="hval-count">0</div><div class="sc-s">Staked on network</div></div>
+    <div class="sc"><div class="sc-l">Tasks Validated</div><div class="sc-v cg" id="hval-tasks">0</div><div class="sc-s">PoPW scored</div></div>
+    <div class="sc"><div class="sc-l">Open Challenges</div><div class="sc-v ca" id="hval-chal">0</div><div class="sc-s">In 24h window</div></div>
+    <div class="sc"><div class="sc-l">Total Slashed</div><div class="sc-v cr" id="hval-slash">0</div><div class="sc-s">testKNX penalized</div></div>
+    <div class="sc"><div class="sc-l">Consensus Rate</div><div class="sc-v cc" id="hval-cons">—</div><div class="sc-s">70% threshold</div></div>
+  </div>
+
+  <div class="g2">
+    <!-- LEFT -->
+    <div>
+      <div class="panel">
+        <div class="sh">REGISTER AS VALIDATOR</div>
+        <p style="font-family:var(--mono);font-size:.63rem;color:var(--muted2);margin-bottom:1rem;line-height:1.6">
+          Stake testKNX to validate humanoid motion tasks. Randomly assigned 3-5 tasks per round. Honest validators earn rewards. Wrong scores trigger slashing.
+        </p>
+        <div class="fgrp"><label class="fl">Stake Amount (testKNX)</label><input id="hv-stake" type="number" value="100" min="50" step="10"/></div>
+        <div class="fgrp"><label class="fl">Validator Node ID</label><input id="hv-name" placeholder="e.g. humanoid-validator-01"/></div>
+        <div id="hv-reg-al"></div>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+          <button class="btn btnp" onclick="hRegisterValidator()">// STAKE & REGISTER</button>
+          <button class="btn btns" onclick="hAutofillValidator()">AUTO-FILL</button>
+        </div>
+        <div id="hv-reg-tx" class="txs mt1" style="display:none"></div>
+      </div>
+
+      <!-- How it works -->
+      <div class="panel mt2">
+        <div class="sh">ANTI-LAZY VALIDATOR SYSTEM</div>
+        <div style="display:grid;gap:.7rem">
+          <div style="background:#050400;border-left:3px solid var(--orange);padding:.75rem">
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--orange);margin-bottom:.3rem">// 01 RANDOM SAMPLING</div>
+            <div style="font-size:.7rem;color:var(--muted2);line-height:1.5">Each task assigns 3-5 validators randomly. Each checks different parts of the IPFS payload — enough to detect fraud without full download.</div>
+          </div>
+          <div style="background:#050400;border-left:3px solid var(--green);padding:.75rem">
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--green);margin-bottom:.3rem">// 02 70% CONSENSUS REQUIRED</div>
+            <div style="font-size:.7rem;color:var(--muted2);line-height:1.5">Score accepted only when 70% of validators agree. Deviating scores auto-trigger a challenge round.</div>
+          </div>
+          <div style="background:#050400;border-left:3px solid var(--red);padding:.75rem">
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--red);margin-bottom:.3rem">// 03 STAKING & SLASHING</div>
+            <div style="font-size:.7rem;color:var(--muted2);line-height:1.5">Validators stake testKNX. Wrong scores that lose challenges get slashed. Honest validators earn extra rewards.</div>
+          </div>
+          <div style="background:#050400;border-left:3px solid var(--amber);padding:.75rem">
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--amber);margin-bottom:.3rem">// 04 24-HOUR CHALLENGE WINDOW</div>
+            <div style="font-size:.7rem;color:var(--muted2);line-height:1.5">Any validator or watcher can dispute a score within 24 hours. Successful challenges slash the dishonest validator and reward the challenger.</div>
+          </div>
+          <div style="background:#050400;border-left:3px solid var(--cyan);padding:.75rem">
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--cyan);margin-bottom:.3rem">// 05 REPUTATION SYSTEM</div>
+            <div style="font-size:.7rem;color:var(--muted2);line-height:1.5">Lazy validators get lower reputation and fewer task assignments. High reputation = more tasks + higher rewards.</div>
+          </div>
+          <div style="background:#050400;border-left:3px solid var(--muted2);padding:.75rem">
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--muted2);margin-bottom:.3rem">// 06 ZK PROOF LAYER — ROADMAP</div>
+            <div style="font-size:.7rem;color:var(--muted2);line-height:1.5">RISC Zero / SP1 integration planned for Launch tier. Validators prove correct scoring without downloading full data. Zero trust required.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div>
+      <div class="panel">
+        <div class="sh">SCORE MOTION TASK (PoPW)</div>
+        <p style="font-family:var(--mono);font-size:.63rem;color:var(--muted2);margin-bottom:.8rem;line-height:1.6">
+          Download IPFS telemetry and submit your PoPW score. Compared against other validators — 70% consensus required.
+        </p>
+        <div class="fgrp">
+          <label class="fl">Task ID to Validate</label>
+          <div style="display:flex;gap:.5rem">
+            <input id="hv-task-id" placeholder="0x… task hash" style="flex:1"/>
+            <button class="btn btns" style="font-size:.62rem;white-space:nowrap" onclick="hLoadPendingTask()">LOAD</button>
+          </div>
+        </div>
+
+        <div style="background:#050400;border:1px solid var(--border2);padding:.9rem;margin-bottom:.8rem">
+          <div style="font-family:var(--mono);font-size:.57rem;color:var(--orange);letter-spacing:3px;text-transform:uppercase;margin-bottom:.7rem">// IPFS TELEMETRY INPUT</div>
+          <div class="fg">
+            <div class="fgrp" style="margin-bottom:.5rem"><label class="fl">Completion %</label><input id="hvt-cmp" type="number" value="90" min="0" max="100"/></div>
+            <div class="fgrp" style="margin-bottom:.5rem"><label class="fl">Elapsed (s)</label><input id="hvt-el" type="number" value="110" min="0"/></div>
+            <div class="fgrp" style="margin-bottom:.5rem"><label class="fl">Stability (0-1)</label><input id="hvt-stab" type="number" value="0.85" min="0" max="1" step="0.01"/></div>
+            <div class="fgrp" style="margin-bottom:.5rem"><label class="fl">Fall Events</label><input id="hvt-falls" type="number" value="0" min="0"/></div>
+          </div>
+          <div style="display:flex;gap:1rem;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:.35rem;font-family:var(--mono);font-size:.63rem;cursor:crosshair"><input type="checkbox" id="hvt-done" checked style="width:auto"> Completed</label>
+            <label style="display:flex;align-items:center;gap:.35rem;font-family:var(--mono);font-size:.63rem;cursor:crosshair"><input type="checkbox" id="hvt-fall" style="width:auto"> Critical Fall</label>
+            <label style="display:flex;align-items:center;gap:.35rem;font-family:var(--mono);font-size:.63rem;cursor:crosshair"><input type="checkbox" id="hvt-safe" checked style="width:auto"> Human-Safe</label>
+          </div>
+        </div>
+
+        <!-- Score preview -->
+        <div id="hv-preview" style="background:#050400;border:1px solid var(--border2);padding:.9rem;margin-bottom:.8rem;display:none">
+          <div style="font-family:var(--mono);font-size:.57rem;color:var(--orange);margin-bottom:.6rem">// COMPUTED PoPW PREVIEW</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.5rem;text-align:center">
+            <div><div id="hp-popw" style="font-family:var(--display);font-size:1.5rem;color:var(--green)">—</div><div style="font-family:var(--mono);font-size:.55rem;color:var(--muted2)">POPW</div></div>
+            <div><div id="hp-stab" style="font-family:var(--display);font-size:1.1rem;color:var(--orange)">—</div><div style="font-family:var(--mono);font-size:.55rem;color:var(--muted2)">STABILITY</div></div>
+            <div><div id="hp-comp" style="font-family:var(--display);font-size:1.1rem;color:var(--orange)">—</div><div style="font-family:var(--mono);font-size:.55rem;color:var(--muted2)">COMPLETION</div></div>
+            <div><div id="hp-eff" style="font-family:var(--display);font-size:1.1rem;color:var(--orange)">—</div><div style="font-family:var(--mono);font-size:.55rem;color:var(--muted2)">EFFICIENCY</div></div>
+          </div>
+          <div id="hp-verdict" style="font-family:var(--mono);font-size:.7rem;text-align:center;margin-top:.5rem"></div>
+        </div>
+
+        <div id="hv-score-al"></div>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+          <button class="btn btns" onclick="hPreviewScore()">PREVIEW</button>
+          <button class="btn btnp" onclick="hSubmitScore()">// SUBMIT SCORE ON-CHAIN</button>
+        </div>
+        <div id="hv-score-tx" class="txs mt1" style="display:none"></div>
+      </div>
+
+      <!-- Challenge -->
+      <div class="panel mt2">
+        <div class="sh">RAISE CHALLENGE (24H WINDOW)</div>
+        <div class="fgrp"><label class="fl">Task ID to Challenge</label><input id="hch-task" placeholder="0x… task hash"/></div>
+        <div class="fgrp"><label class="fl">Reason</label>
+          <select id="hch-reason">
+            <option value="score_deviation">Score deviation &gt;15% from consensus</option>
+            <option value="ipfs_not_downloaded">Validator did not download IPFS payload</option>
+            <option value="wrong_stability">Stability score incorrect</option>
+            <option value="completion_mismatch">Completion percentage mismatch</option>
+            <option value="other">Other — see evidence</option>
+          </select>
+        </div>
+        <div class="fgrp"><label class="fl">Evidence</label>
+          <textarea id="hch-evidence" placeholder="Describe the scoring error..." style="min-height:55px"></textarea>
+        </div>
+        <div id="hch-al"></div>
+        <button class="btn btnp" onclick="hRaiseChallenge()">⚠ RAISE CHALLENGE ON-CHAIN</button>
+        <div id="hch-tx" class="txs mt1" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Validators Table -->
+  <div class="panel mt2">
+    <div class="sh">REGISTERED VALIDATORS</div>
+    <div class="tw"><table>
+      <thead><tr><th>Address</th><th>Node ID</th><th>Stake</th><th>Tasks</th><th>Consensus</th><th>Reputation</th><th>Slashed</th><th>Status</th></tr></thead>
+      <tbody id="hvalidators-tb"><tr><td colspan="8" class="empty">// NO VALIDATORS REGISTERED YET</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <!-- Challenges Table -->
+  <div class="panel mt2">
+    <div class="sh">ACTIVE CHALLENGES (24H WINDOW)</div>
+    <div class="tw"><table>
+      <thead><tr><th>Challenge ID</th><th>Task ID</th><th>Reason</th><th>Challenger</th><th>Time Left</th><th>Status</th><th>Tx</th></tr></thead>
+      <tbody id="hchallenges-tb"><tr><td colspan="7" class="empty">// NO ACTIVE CHALLENGES</td></tr></tbody>
+    </table></div>
+  </div>
+
+</div>
+
+<!-- JOINT CONTROL VISUALIZER -->
+<div id="page-joints" class="page">
+  <div class="g2">
+    <!-- LEFT: Robot selector + joint sliders -->
+    <div>
+      <div class="panel">
+        <div class="sh">SELECT ROBOT</div>
+        <div class="fgrp">
+          <label class="fl">Active Humanoid</label>
+          <select id="jv-robot" onchange="loadJointRobot()" style="width:100%">
+            <option value="">— Select registered robot —</option>
+          </select>
+        </div>
+        <div id="jv-robot-info" style="display:none">
+          <div style="display:flex;gap:.8rem;align-items:center;margin-bottom:.8rem">
+            <div id="jv-avatar" style="font-size:2rem"></div>
+            <div>
+              <div id="jv-name" style="font-family:var(--display);font-size:1.1rem;letter-spacing:2px;color:var(--orange)"></div>
+              <div id="jv-meta" style="font-family:var(--mono);font-size:.58rem;color:var(--muted2)"></div>
+            </div>
+            <div style="margin-left:auto;text-align:right">
+              <div id="jv-score" style="font-family:var(--display);font-size:1.4rem;color:var(--green)"></div>
+              <div style="font-family:var(--mono);font-size:.55rem;color:var(--muted2)">PoPW SCORE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="sh">JOINT ANGLES — LIVE CONTROL</div>
+        <p style="font-family:var(--mono);font-size:.62rem;color:var(--muted2);margin-bottom:1rem;line-height:1.6">
+          Adjust joint angles and submit as a motion policy on-chain. Sliders represent degrees of freedom (DOF) in real-time.
+        </p>
+        <div id="joint-sliders">
+          <div class="empty">// SELECT A ROBOT TO LOAD JOINT CONFIGURATION</div>
+        </div>
+        <div style="margin-top:1rem;display:flex;gap:.6rem;flex-wrap:wrap">
+          <button class="btn btnp" onclick="submitJointPolicy()" id="jv-submit-btn" disabled>// SIGN & SUBMIT POLICY ON-CHAIN</button>
+          <button class="btn btns" onclick="randomizeJoints()">RANDOMIZE</button>
+          <button class="btn btns" onclick="resetJoints()">RESET</button>
+        </div>
+        <div id="jv-al" style="margin-top:.8rem"></div>
+        <div id="jv-tx" class="txs mt1" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: SVG humanoid figure + live angle display -->
+    <div>
+      <div class="panel">
+        <div class="sh">LIVE BODY VISUALIZATION</div>
+        <div style="display:flex;justify-content:center;align-items:center;min-height:420px;position:relative">
+          <svg id="body-svg" viewBox="0 0 220 380" width="220" height="380" xmlns="http://www.w3.org/2000/svg"
+               style="overflow:visible">
+            <!-- GLOW -->
+            <ellipse cx="110" cy="372" rx="55" ry="8" fill="var(--orange)" opacity=".1"/>
+
+            <!-- HEAD -->
+            <rect id="bhead" x="78" y="8" width="64" height="46" rx="6" fill="none" stroke="var(--orange)" stroke-width="1.5"/>
+            <rect x="88" y="18" width="16" height="10" rx="2" fill="var(--orange)" opacity=".6"/>
+            <rect x="116" y="18" width="16" height="10" rx="2" fill="var(--orange)" opacity=".6"/>
+            <line x1="94" y1="38" x2="126" y2="38" stroke="var(--orange)" stroke-width="1" opacity=".4"/>
+
+            <!-- NECK -->
+            <rect x="100" y="54" width="20" height="14" rx="2" fill="none" stroke="var(--orange)" stroke-width="1.5"/>
+
+            <!-- TORSO -->
+            <rect id="btorso" x="58" y="68" width="104" height="82" rx="4" fill="none" stroke="var(--orange)" stroke-width="1.5"/>
+            <rect x="78" y="78" width="64" height="36" rx="2" fill="var(--orange)" opacity=".05"/>
+            <line x1="110" y1="78" x2="110" y2="114" stroke="var(--orange)" stroke-width="1" opacity=".3"/>
+            <circle cx="78" cy="96" r="5" fill="var(--orange)" opacity=".5"/>
+            <circle cx="142" cy="96" r="5" fill="var(--orange)" opacity=".5"/>
+
+            <!-- HIPS -->
+            <rect x="66" y="150" width="88" height="16" rx="3" fill="none" stroke="var(--orange)" stroke-width="1.5"/>
+
+            <!-- LEFT SHOULDER JOINT -->
+            <circle id="j-lshoulder" cx="56" cy="74" r="7" fill="none" stroke="var(--orange)" stroke-width="2"/>
+            <circle cx="56" cy="74" r="3" fill="var(--orange)" opacity=".7"/>
+            <!-- LEFT UPPER ARM -->
+            <rect id="j-larm-upper" x="30" y="68" width="22" height="52" rx="4" fill="none" stroke="var(--orange)" stroke-width="1.5" transform-origin="41 68"/>
+            <!-- LEFT ELBOW -->
+            <circle id="j-lelbow" cx="41" cy="124" r="5" fill="none" stroke="var(--orange)" stroke-width="2"/>
+            <circle cx="41" cy="124" r="2" fill="var(--orange)" opacity=".7"/>
+            <!-- LEFT LOWER ARM -->
+            <rect id="j-larm-lower" x="30" y="124" width="22" height="40" rx="4" fill="none" stroke="var(--orange)" stroke-width="1.5"/>
+            <!-- LEFT HAND -->
+            <rect x="28" y="164" width="26" height="22" rx="3" fill="none" stroke="var(--orange)" stroke-width="1.5"/>
+
+            <!-- RIGHT SHOULDER JOINT -->
+            <circle id="j-rshoulder" cx="164" cy="74" r="7" fill="none" stroke="var(--orange)" stroke-width="2"/>
+            <circle cx="164" cy="74" r="3" fill="var(--orange)" opacity=".7"/>
+            <!-- RIGHT UPPER ARM -->
+            <rect id="j-rarm-upper" x="168" y="68" width="22" height="52" rx="4" fill="none" stroke="var(--orange)" stroke-width="1.5" transform-origin="179 68"/>
+            <!-- RIGHT ELBOW -->
+            <circle id="j-relbow" cx="179" cy="124" r="5" fill="none" stroke="var(--orange)" stroke-width="2"/>
+            <circle cx="179" cy="124" r="2" fill="var(--orange)" opacity=".7"/>
+            <!-- RIGHT LOWER ARM -->
+            <rect id="j-rarm-lower" x="168" y="124" width="22" height="40" rx="4" fill="none" stroke="var(--orange)" stroke-width="1.5"/>
+            <!-- RIGHT HAND -->
+            <rect x="166" y="164" width="26" height="22" rx="3" fill="none" stroke="var(--orange)" stroke-width="1.5"/>
+
+            <!-- LEFT HIP JOINT -->
+            <circle id="j-lhip" cx="88" cy="158" r="6" fill="none" stroke="var(--orange)" stroke-width="2"/>
+            <circle cx="88" cy="158" r="2.5" fill="var(--orange)" opacity=".7"/>
+            <!-- LEFT UPPER LEG -->
+            <rect id="j-lleg-upper" x="72" y="166" width="32" height="60" rx="4" fill="none" stroke="var(--orange)" stroke-width="1.5" transform-origin="88 166"/>
+            <!-- LEFT KNEE -->
+            <circle id="j-lknee" cx="88" cy="230" r="6" fill="none" stroke="var(--orange)" stroke-width="2"/>
+            <circle cx="88" cy="230" r="2.5" fill="var(--orange)" opacity=".7"/>
+            <!-- LEFT LOWER LEG -->
+            <rect id="j-lleg-lower" x="72" y="230" width="32" height="60" rx="4" fill="none" stroke="var(--orange)" stroke-width="1.5"/>
+            <!-- LEFT FOOT -->
+            <rect x="62" y="290" width="44" height="18" rx="3" fill="none" stroke="var(--orange)" stroke-width="1.5"/>
+
+            <!-- RIGHT HIP JOINT -->
+            <circle id="j-rhip" cx="132" cy="158" r="6" fill="none" stroke="var(--orange)" stroke-width="2"/>
+            <circle cx="132" cy="158" r="2.5" fill="var(--orange)" opacity=".7"/>
+            <!-- RIGHT UPPER LEG -->
+            <rect id="j-rleg-upper" x="116" y="166" width="32" height="60" rx="4" fill="none" stroke="var(--orange)" stroke-width="1.5" transform-origin="132 166"/>
+            <!-- RIGHT KNEE -->
+            <circle id="j-rknee" cx="132" cy="230" r="6" fill="none" stroke="var(--orange)" stroke-width="2"/>
+            <circle cx="132" cy="230" r="2.5" fill="var(--orange)" opacity=".7"/>
+            <!-- RIGHT LOWER LEG -->
+            <rect id="j-rleg-lower" x="116" y="230" width="32" height="60" rx="4" fill="none" stroke="var(--orange)" stroke-width="1.5"/>
+            <!-- RIGHT FOOT -->
+            <rect x="114" y="290" width="44" height="18" rx="3" fill="none" stroke="var(--orange)" stroke-width="1.5"/>
+
+            <!-- JOINT ANGLE LABELS -->
+            <text id="lbl-lshoulder" x="18" y="72" font-family="JetBrains Mono,monospace" font-size="8" fill="var(--amber)" opacity=".9">0°</text>
+            <text id="lbl-lelbow"    x="8"  y="126" font-family="JetBrains Mono,monospace" font-size="8" fill="var(--amber)" opacity=".9">0°</text>
+            <text id="lbl-rshoulder" x="176" y="72" font-family="JetBrains Mono,monospace" font-size="8" fill="var(--amber)" opacity=".9">0°</text>
+            <text id="lbl-relbow"    x="194" y="126" font-family="JetBrains Mono,monospace" font-size="8" fill="var(--amber)" opacity=".9">0°</text>
+            <text id="lbl-lhip"      x="48" y="162" font-family="JetBrains Mono,monospace" font-size="8" fill="var(--amber)" opacity=".9">0°</text>
+            <text id="lbl-lknee"     x="48" y="234" font-family="JetBrains Mono,monospace" font-size="8" fill="var(--amber)" opacity=".9">0°</text>
+            <text id="lbl-rhip"      x="144" y="162" font-family="JetBrains Mono,monospace" font-size="8" fill="var(--amber)" opacity=".9">0°</text>
+            <text id="lbl-rknee"     x="144" y="234" font-family="JetBrains Mono,monospace" font-size="8" fill="var(--amber)" opacity=".9">0°</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Live angle readout -->
+      <div class="panel">
+        <div class="sh">JOINT ANGLE READOUT</div>
+        <div id="jv-readout" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+          <div class="empty" style="grid-column:1/-1;font-size:.62rem">// LOAD A ROBOT TO SEE JOINT DATA</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Policy history -->
+  <div class="panel">
+    <div class="sh">SUBMITTED JOINT POLICIES (ON-CHAIN)</div>
+    <div class="tw"><table>
+      <thead><tr><th>Policy ID</th><th>Robot</th><th>Motion Type</th><th>Key Joints</th><th>Tx Hash</th><th>Block</th><th>Status</th></tr></thead>
+      <tbody id="jv-policies-tb"><tr><td colspan="7" class="empty">// NO POLICIES SUBMITTED YET</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- FAUCET -->
+<div id="page-faucet" class="page">
+  <div class="panel" style="border-top:2px solid var(--orange)">
+    <div class="sh">TESTKНХ FAUCET</div>
+    <p style="font-family:var(--mono);font-size:.63rem;color:var(--muted2);margin-bottom:1rem;line-height:1.6">Claim free testKNX to register humanoids and submit tasks on Konnex Testnet.</p>
+    <div class="fgrp"><label class="fl">Substrate Address</label>
+      <div style="display:flex;gap:.6rem">
+        <input id="faucet-addr" placeholder="5GrwvaEF5zXb26…" style="flex:1"/>
+        <button class="btn btns" onclick="preFaucet()" style="font-size:.61rem">USE WALLET</button>
+      </div>
+    </div>
+    <div id="faucet-al"></div>
+    <button class="btn btnp" onclick="reqFaucet()">// REQUEST 100 TESTKНХ</button>
+  </div>
+  <div class="g2">
+    <div class="panel">
+      <div class="sh">FAUCET INFO</div>
+      <div class="ir"><div class="ik">Network</div><div class="iv">Konnex Testnet</div></div>
+      <div class="ir"><div class="ik">Token</div><div class="iv">testKNX</div></div>
+      <div class="ir"><div class="ik">Amount</div><div class="iv">100 testKNX / request</div></div>
+      <div class="ir"><div class="ik">Cooldown</div><div class="iv">24 hours</div></div>
+      <div class="ir"><div class="ik">Endpoint</div><div class="iv" style="font-size:.59rem">faucet.testnet.konnex.world</div></div>
+    </div>
+    <div class="panel">
+      <div class="sh">WALLET SETUP</div>
+      <div style="font-family:var(--mono);font-size:.63rem;color:var(--muted2);line-height:2.1">
+        <div>01 // Install <span style="color:var(--orange)">SubWallet</span> — subwallet.app</div>
+        <div>02 // Create Substrate account</div>
+        <div>03 // Add Konnex Testnet RPC:</div>
+        <div style="color:var(--orange);padding:.3rem .6rem;background:#050400;border-left:2px solid var(--orange);margin:.2rem 0;font-size:.59rem">wss://testnet-rpc1.konnex.world:39944</div>
+        <div>04 // Request testKNX above</div>
+        <div>05 // Connect wallet — start building</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUBNET INFO -->
+<div id="page-info" class="page">
+  <div class="g2">
+    <div class="panel">
+      <div class="sh">SUBNET DETAILS</div>
+      <div class="ir"><div class="ik">Name</div><div class="iv">HumanoidOS</div></div>
+      <div class="ir"><div class="ik">Version</div><div class="iv">v0.1.0</div></div>
+      <div class="ir"><div class="ik">Category</div><div class="iv">Humanoid Robots Control</div></div>
+      <div class="ir"><div class="ik">Grant Tier</div><div class="iv"><span class="b bo">Spark — $25,000</span></div></div>
+      <div class="ir"><div class="ik">Status</div><div class="iv"><span class="b bg">// TESTNET ACTIVE</span></div></div>
+      <div class="ir"><div class="ik">License</div><div class="iv">MIT Open Source</div></div>
+    </div>
+    <div class="panel">
+      <div class="sh">NETWORK CONFIG</div>
+      <div class="ir"><div class="ik">Chain</div><div class="iv">Konnex Testnet</div></div>
+      <div class="ir"><div class="ik">RPC WS</div><div class="iv" style="font-size:.57rem">wss://testnet-rpc1.konnex.world:39944</div></div>
+      <div class="ir"><div class="ik">RPC HTTP</div><div class="iv" style="font-size:.57rem">https://testnet-rpc1.konnex.world</div></div>
+      <div class="ir"><div class="ik">Explorer</div><div class="iv" style="font-size:.57rem">subnets.testnet.konnex.world</div></div>
+      <div class="ir"><div class="ik">Consensus</div><div class="iv">Proof-of-Physical-Work</div></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="panel">
+      <div class="sh">POPW SCORING</div>
+      <div class="ir"><div class="ik">Stability / Safety</div><div class="iv"><span class="cg">40%</span></div></div>
+      <div class="ir"><div class="ik">Task Completion</div><div class="iv"><span class="co">35%</span></div></div>
+      <div class="ir"><div class="ik">Energy Efficiency</div><div class="iv"><span class="ca">25%</span></div></div>
+      <div class="ir"><div class="ik">Accept Threshold</div><div class="iv cg">≥ 0.50</div></div>
+      <div class="ir"><div class="ik">Decay Factor</div><div class="iv">0.95 EMA</div></div>
+    </div>
+    <div class="panel">
+      <div class="sh">TEAM</div>
+      <div class="ir"><div class="ik">Founder</div><div class="iv">Salma Perveen</div></div>
+      <div class="ir"><div class="ik">Email</div><div class="iv" style="font-size:.59rem">salmakashif615@gmail.com</div></div>
+      <div class="ir"><div class="ik">Twitter</div><div class="iv">—</div></div>
+      <div class="ir"><div class="ik">GitHub</div><div class="iv" style="font-size:.59rem">github.com/humanoidOS-subnet</div></div>
+      <div class="ir"><div class="ik">Grant Ask</div><div class="iv"><span class="b ba">Spark $25K</span></div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="sh">REPUTATION TIERS</div>
+    <div class="tiers">
+      <div class="tierc"><div style="font-size:1.3rem">👑</div><div class="tiern ca">ELITE</div><div class="tierr">≥ 0.85</div></div>
+      <div class="tierc"><div style="font-size:1.3rem">⚡</div><div class="tiern cg">PROVEN</div><div class="tierr">≥ 0.70</div></div>
+      <div class="tierc"><div style="font-size:1.3rem">🔶</div><div class="tiern co">ACTIVE</div><div class="tierr">≥ 0.50</div></div>
+      <div class="tierc"><div style="font-size:1.3rem">🔸</div><div class="tiern cr">NOVICE</div><div class="tierr">≥ 0.25</div></div>
+      <div class="tierc"><div style="font-size:1.3rem">◻</div><div class="tiern" style="color:var(--muted2)">UNRATED</div><div class="tierr">&lt; 0.25</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const RPC='wss://testnet-rpc1.konnex.world:39944';
+const EXPL='https://subnets.testnet.konnex.world';
+const APP='HumanoidOS';
+const WS={stability:.40,completion:.35,efficiency:.25};
+const DECAY=.95;
+const TIERS=[[.85,'ELITE','ca'],[.70,'PROVEN','cg'],[.50,'ACTIVE','co'],[.25,'NOVICE','cr'],[0,'UNRATED','']];
+const STRATS={
+  locomotion:['dynamic_stride','energy_optimal','terrain_adaptive','speed_burst'],
+  balance:['zmp_control','capture_point','whole_body_ctrl','reactive_recovery'],
+  manipulation:['impedance_ctrl','force_torque','vision_servo','compliant_grasp'],
+  whole_body:['centroidal_momentum','task_priority','hierarchical_ctrl','loco_manip'],
+  agility:['mpc_trajectory','jump_landing','obstacle_vault','rapid_replan'],
+  interaction:['human_aware','force_limit','social_nav','compliant_handoff'],
+};
+const RTYPES={bipedal_general:'🚶',bipedal_industrial:'🏭',bipedal_collaborative:'🤝',bipedal_research:'🔬',android:'🤖'};
+const W3={api:null,signer:null,address:null,walletName:null,chainName:null,blockNum:null,balance:null};
+const DB={robots:[],tasks:[],memory:[],rep:{}};
+const rand=(a,b)=>Math.random()*(b-a)+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const now=()=>new Date().toISOString();
+const sid=s=>s?s.slice(0,12)+'…':'—';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function hx(s){let h=0x811c9dc5|0;for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),0x01000193)|0;const u=n=>(n>>>0).toString(16).padStart(8,'0');return '0x'+u(h)+u(Math.imul(h,0xdeadbeef)|0)+u(Math.imul(h,0xcafe)|0)+u(Math.imul(h,0xf00d)|0);}
+function scoreC(v){return v>=.8?'var(--green)':v>=.5?'var(--amber)':'var(--red)';}
+function barH(v){return `<div class="bar"><div class="barf" style="width:${(v*100).toFixed(0)}%;background:${scoreC(v)}"></div></div>`;}
+function tierOf(s){for(const[t,l,c]of TIERS)if(s>=t)return{l,c};return{l:'UNRATED',c:''};}
+function tierBadge(s){const{l,c}=tierOf(s);const m={ca:'ba',cg:'bg',co:'bo',cr:'br','':'bm'};return `<span class="b ${m[c]||'bm'}">${l}</span>`;}
+function statusBadge(s){const m={open:'bo',submitted:'ba',completed:'bg',failed:'br'};return `<span class="b ${m[s]||'bm'}">${s.toUpperCase()}</span>`;}
+function alog(msg,t='i'){const el=document.getElementById('act-log');if(!el)return;const d=document.createElement('div');d.className=`ll l${t}`;d.textContent=`[${new Date().toTimeString().slice(0,8)}] // ${msg}`;el.appendChild(d);el.scrollTop=el.scrollHeight;if(el.children.length>300)el.removeChild(el.children[0]);}
+function toast(msg,t='i'){const c=document.getElementById('toasts');const el=document.createElement('div');const icons={s:'OK',e:'ERR',i:'///',w:'WARN'};const cls={s:'ts',e:'te',i:'ti',w:'tw2'};el.className=`toast ${cls[t]||'ti'}`;el.innerHTML=`<span style="opacity:.6">[${icons[t]||'///'}]</span><span>${msg}</span>`;c.appendChild(el);setTimeout(()=>{el.style.animation='tin .2s ease reverse';setTimeout(()=>el.remove(),200);},4000);}
+function go(name){document.querySelectorAll('.tab').forEach((t,i)=>{const keys=['home','dash','robots','tasks','memory','joints','validators','lb','faucet','info'];t.classList.toggle('active',keys[i]===name);});document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');if(name==='dash')renderDash();if(name==='robots'){renderRobots();showBanner('wb-r');}if(name==='tasks'){renderTasks();updSels();showBanner('wb-t');}if(name==='memory')updSels();if(name==='lb')renderLB();if(name==='joints')updSels();if(name==='validators')hRenderValidatorPage();}
+function showBanner(id){const el=document.getElementById(id);if(el)el.classList.toggle('show',!W3.address);}
+function openModal(){document.getElementById('wmodal').classList.add('open');W3.address?showC2():showC1();}
+function closeModal(){document.getElementById('wmodal').classList.remove('open');}
+document.getElementById('wmodal').addEventListener('click',e=>{if(e.target===document.getElementById('wmodal'))closeModal();});
+function showC1(){document.getElementById('mtitle').textContent='CONNECT WALLET';document.getElementById('mconn').style.display='block';document.getElementById('mconn2').style.display='none';document.getElementById('no-ext').style.display='none';}
+function showC2(){document.getElementById('mtitle').textContent='WALLET ONLINE';document.getElementById('mconn').style.display='none';document.getElementById('mconn2').style.display='block';document.getElementById('winfo').innerHTML=`<div class="wir"><span class="wik">WALLET</span><span class="wiv">${W3.walletName}</span></div><div class="wir"><span class="wik">ADDRESS</span><span class="wiv" style="font-size:.57rem">${W3.address}</span></div><div class="wir"><span class="wik">NETWORK</span><span class="wiv">${W3.chainName||'Konnex Testnet'}</span></div><div class="wir"><span class="wik">BALANCE</span><span class="wiv cg">${W3.balance!=null?W3.balance+' testKNX':'Querying...'}</span></div>`;}
+async function connectExt(extKey,extName){const noEl=document.getElementById('no-ext');const noName=document.getElementById('no-ext-name');noEl.style.display='none';const inj=window.injectedWeb3;if(!inj||!inj[extKey]){noName.textContent=extName;noEl.style.display='block';toast(`${extName} not installed`,'w');return;}try{await inj[extKey].enable(APP);const accounts=await inj[extKey].accounts?.get?.()||[];if(!accounts.length){noEl.textContent=`⚠ No accounts in ${extName}. Create or import account, refresh.`;noEl.style.display='block';return;}W3.walletName=extName;W3.address=accounts[0].address;toast('Connecting to chain…','i');await connectChain(extKey);setWUI();closeModal();toast(`ONLINE: ${W3.address.slice(0,10)}…`,'s');alog(`Wallet: ${extName} // ${W3.address.slice(0,16)}…`,'ok');const active=document.querySelector('.page.active');if(active)go(active.id.replace('page-',''));}catch(err){toast(`Error: ${err.message}`,'e');alog(err.message,'e');}}
+async function connectChain(extKey){try{const PApi=window.polkadotApi||(typeof polkadotApi!=='undefined'?polkadotApi:null);if(!PApi){alog('Polkadot.js not loaded','w');return;}const{ApiPromise,WsProvider}=PApi;const provider=new WsProvider(RPC);W3.api=await ApiPromise.create({provider});const[chain,ver]=await Promise.all([W3.api.rpc.system.chain(),W3.api.rpc.system.version()]);W3.chainName=chain.toString();alog(`Chain: ${W3.chainName} v${ver}`,'ok');const{data:bal}=await W3.api.query.system.account(W3.address);W3.balance=(BigInt(bal.free.toString())/BigInt(1e10)).toString();W3.api.rpc.chain.subscribeNewHeads(hdr=>{W3.blockNum=hdr.number.toNumber();const bp=document.getElementById('bpill');const bn=document.getElementById('bnum');if(bp)bp.style.display='flex';if(bn)bn.textContent=W3.blockNum;});const inj=window.injectedWeb3;if(inj&&inj[extKey])W3.signer=await inj[extKey].signer;}catch(err){alog(`Chain error: ${err.message}`,'w');}}
+function setWUI(){const btn=document.getElementById('wbtn');const txt=document.getElementById('wbtxt');btn.classList.add('on');txt.textContent=W3.address.slice(0,6)+'…'+W3.address.slice(-4);const fa=document.getElementById('faucet-addr');if(fa&&!fa.value)fa.value=W3.address;}
+function disconnect(){if(W3.api)W3.api.disconnect().catch(()=>{});Object.assign(W3,{api:null,signer:null,address:null,walletName:null,balance:null,chainName:null,blockNum:null});document.getElementById('wbtn').classList.remove('on');document.getElementById('wbtxt').textContent='CONNECT WALLET';const bp=document.getElementById('bpill');if(bp)bp.style.display='none';closeModal();toast('Wallet disconnected','i');alog('Wallet disconnected','w');}
+function guard(){if(!W3.address){toast('Connect wallet first','e');openModal();return false;}return true;}
+async function sendTx(remark){if(!W3.api)throw new Error('Not connected to Konnex node. Check RPC.');if(!W3.signer)throw new Error('Wallet signer unavailable. Reconnect wallet.');const ext=W3.api.tx.system.remark(remark);return new Promise((resolve,reject)=>{ext.signAndSend(W3.address,{signer:W3.signer},({status,dispatchError})=>{if(dispatchError){if(dispatchError.isModule){const d=W3.api.registry.findMetaError(dispatchError.asModule);reject(new Error(`${d.section}.${d.name}: ${d.docs.join(' ')}`));}else reject(new Error(dispatchError.toString()));return;}if(status.isInBlock)resolve({txHash:ext.hash.toString(),blockHash:status.asInBlock.toString(),blockNum:W3.blockNum});}).catch(reject);});}
+function txHTML(txHash,blockNum,blockHash,ok){return `<div class="txr"><span class="txk">STATUS</span><span class="txv ${ok?'cg':'cr'}">${ok?'// FINALIZED':'// FAILED'}</span></div><div class="txr"><span class="txk">TX HASH</span><span class="txv"><a class="txlnk" href="${EXPL}/tx/${txHash}" target="_blank">${txHash.slice(0,22)}… ↗</a></span></div><div class="txr"><span class="txk">BLOCK</span><span class="txv"><a class="txlnk" href="${EXPL}/block/${blockHash||''}" target="_blank">#${blockNum||'?'} ↗</a></span></div>`;}
+function computeScores(tele,type){let stab=parseFloat(tele.stab)||.8;if(tele.fall)stab-=.50;if(tele.estop)stab-=.30;if(tele.falls>0)stab-=Math.min(.3,tele.falls*.15);if(tele.jerr>2)stab-=Math.min(.2,tele.jerr*.05);stab=Math.max(0,Math.min(1,stab));let comp=tele.done?1:tele.cmp/100;if(type==='balance'&&tele.fall)comp*=.5;if(type==='manipulation'&&!tele.done)comp*=.7;if(type==='agility'&&tele.falls>0)comp*=.8;comp=Math.min(1,Math.max(0,comp));let eff=1;if(tele.el&&tele.timeout){const r=tele.el/tele.timeout;if(r>1)eff-=Math.min(.4,(r-1)*.4);else if(r>.8)eff-=.10;}if(!tele.safe)eff-=.20;if(tele.nrg>1200)eff-=Math.min(.2,(tele.nrg-1200)/2000*.2);eff=Math.max(0,eff);const popw=+(stab*WS.stability+comp*WS.completion+eff*WS.efficiency).toFixed(4);return{popw,stability:+stab.toFixed(4),completion:+comp.toFixed(4),efficiency:+eff.toFixed(4)};}
+function updRep(rid,scores,ok){if(!DB.rep[rid])DB.rep[rid]={score:0,total:0,success:0,updated:now()};const r=DB.rep[rid];const raw=scores.stability*WS.stability+scores.completion*WS.completion+scores.efficiency*WS.efficiency;r.score=+Math.min(1,Math.max(0,DECAY*r.score+(1-DECAY)*raw)).toFixed(4);r.total++;if(ok)r.success++;r.updated=now();}
+async function registerRobot(){if(!guard())return;const name=document.getElementById('r-name').value.trim();const model=document.getElementById('r-model').value.trim();const serial=document.getElementById('r-serial').value.trim();const type=document.getElementById('r-type').value;const dof=document.getElementById('r-dof').value;const act=document.getElementById('r-act').value;const alEl=document.getElementById('r-al');const txEl=document.getElementById('r-tx');const btn=document.getElementById('r-btn');if(!name){alEl.innerHTML='<div class="al ale">// ROBOT CALLSIGN REQUIRED</div>';return;}const hw={model:model||'generic',serial:serial||'SN-'+Date.now(),type,dof,act};const hwHash=hx(JSON.stringify(hw)+W3.address).slice(2,66);const robotId=hx('humanoidOS::'+hwHash+'::'+W3.address.toLowerCase());if(DB.robots.find(r=>r.robot_id===robotId)){alEl.innerHTML='<div class="al alw">// HARDWARE FINGERPRINT ALREADY REGISTERED</div>';return;}alEl.innerHTML='<div class="al ali"><span class="spin"></span> // PREPARING EXTRINSIC…</div>';btn.disabled=true;txEl.style.display='none';const payload=JSON.stringify({op:'humanoidOS::registerRobot',v:1,robot_id:robotId,hw_hash:hwHash,name,model,serial,type,dof,act,netuid:10,owner:W3.address,at:now()});try{alEl.innerHTML='<div class="al ali"><span class="spin"></span> // WAITING FOR WALLET SIGNATURE…</div>';alog(`Registering "${name}" — signing…`,'i');const{txHash,blockNum,blockHash}=await sendTx(payload);DB.robots.push({robot_id:robotId,hw_hash:hwHash,name,model,serial,type,dof,act,owner:W3.address,tx:txHash,block:blockNum,registered_at:now()});DB.rep[robotId]={score:0,total:0,success:0,updated:now()};alEl.innerHTML=`<div class="al als">// HUMANOID REGISTERED ON-CHAIN<br/><span style="font-size:.6rem">ID: ${robotId.slice(0,28)}…</span></div>`;txEl.style.display='block';txEl.innerHTML=txHTML(txHash,blockNum,blockHash,true);alog(`// REGISTERED: "${name}" | Block #${blockNum}`,'ok');toast(`"${name}" ONLINE`,'s');renderRobots();updSels();renderDash();}catch(err){alEl.innerHTML=`<div class="al ale">// ERROR: ${err.message}</div>`;alog(`ERR: ${err.message}`,'e');toast('TX FAILED','e');}btn.disabled=false;}
+function autofillR(){const ex=[{name:'ATLAS-X1',model:'Boston Dynamics Atlas',serial:'BD-'+Date.now().toString().slice(-4),type:'bipedal_general',dof:'28',act:'hydraulic'},{name:'OPTIMUS-7',model:'Tesla Optimus Gen2',serial:'TSL-'+Date.now().toString().slice(-4),type:'bipedal_industrial',dof:'36',act:'electric'},{name:'FIGURE-03',model:'Figure-01',serial:'FIG-'+Date.now().toString().slice(-4),type:'bipedal_collaborative',dof:'43',act:'electric'},{name:'AIBO-HX',model:'Sony AIBO HX',serial:'SNY-'+Date.now().toString().slice(-4),type:'android',dof:'55',act:'sma'}];const e=pick(ex);document.getElementById('r-name').value=e.name;document.getElementById('r-model').value=e.model;document.getElementById('r-serial').value=e.serial;document.getElementById('r-type').value=e.type;document.getElementById('r-dof').value=e.dof;document.getElementById('r-act').value=e.act;}
+async function postTask(){if(!guard())return;const instr=document.getElementById('t-instr').value.trim();const type=document.getElementById('t-type').value;const reward=parseFloat(document.getElementById('t-reward').value)||0;const robotId=document.getElementById('t-robot').value||null;const diff=document.getElementById('t-diff').value;const alEl=document.getElementById('t-al');const txEl=document.getElementById('t-tx');const btn=document.getElementById('t-btn');if(!instr){alEl.innerHTML='<div class="al ale">// TASK INSTRUCTION REQUIRED</div>';return;}const taskId=hx(instr+'::'+W3.address+'::'+Date.now());const payload=JSON.stringify({op:'humanoidOS::submitTask',v:1,task_id:taskId,robot_id:robotId,task_type:type,instruction:instr,reward_knx:reward,difficulty:diff,poster:W3.address,netuid:10,at:now()});alEl.innerHTML='<div class="al ali"><span class="spin"></span> // WAITING FOR SIGNATURE…</div>';btn.disabled=true;txEl.style.display='none';alog(`Posting [${type}]: ${instr.slice(0,40)}…`,'i');try{const{txHash,blockNum,blockHash}=await sendTx(payload);const robot=DB.robots.find(r=>r.robot_id===robotId);DB.tasks.push({task_id:taskId,robot_id:robotId,robot_name:robot?.name||'any',task_type:type,instruction:instr,reward_knx:reward,difficulty:diff,poster:W3.address,status:'open',tx:txHash,block:blockNum,popw_score:null,submitted_at:now()});alEl.innerHTML=`<div class="al als">// TASK ON-CHAIN<br/><span style="font-size:.6rem">ID: ${taskId.slice(0,28)}…</span></div>`;txEl.style.display='block';txEl.innerHTML=txHTML(txHash,blockNum,blockHash,true);alog(`// TASK POSTED | [${type}] | ${reward} KNX | #${blockNum}`,'ok');toast(`TASK LIVE — ${reward} KNX`,'s');updExecSel();renderTasks();renderDash();}catch(err){alEl.innerHTML=`<div class="al ale">// ERROR: ${err.message}</div>`;alog(`ERR: ${err.message}`,'e');toast('TX FAILED','e');}btn.disabled=false;}
+function autofillT(){const tasks=[{instr:'Walk 30m across uneven terrain, ascend 3 steps, open door with handle, proceed to waypoint B',type:'locomotion',reward:18},{instr:'Recover from 50N push force while standing on single leg for 10 seconds without falling',type:'balance',reward:12},{instr:'Pick 2kg box from floor, carry 15m, place precisely on shelf at 1.4m height without dropping',type:'manipulation',reward:15},{instr:'Coordinate legs for locomotion while arms perform simultaneous overhead assembly task at waypoint',type:'whole_body',reward:22},{instr:'Jump over 0.4m obstacle, roll on landing, stand up, sprint 10m to target zone under 20 seconds',type:'agility',reward:20},{instr:'Safely hand fragile object to human operator within 0.5m range without triggering any safety stop',type:'interaction',reward:14}];const t=pick(tasks);document.getElementById('t-instr').value=t.instr;document.getElementById('t-type').value=t.type;document.getElementById('t-reward').value=t.reward;}
+async function submitPoPW(){if(!guard())return;const taskId=document.getElementById('exec-sel').value;const alEl=document.getElementById('exec-al');const txEl=document.getElementById('exec-tx');const btn=document.getElementById('exec-btn');if(!taskId){alEl.innerHTML='<div class="al ale">// SELECT A TASK FIRST</div>';return;}const task=DB.tasks.find(t=>t.task_id===taskId);if(!task){alEl.innerHTML='<div class="al ale">// TASK NOT FOUND</div>';return;}const tele={cmp:parseFloat(document.getElementById('tc-cmp').value)||0,el:parseFloat(document.getElementById('tc-el').value)||0,stab:parseFloat(document.getElementById('tc-stab').value)||0,falls:parseInt(document.getElementById('tc-falls').value)||0,jerr:parseInt(document.getElementById('tc-jerr').value)||0,nrg:parseFloat(document.getElementById('tc-nrg').value)||0,done:document.getElementById('tc-done').checked,fall:document.getElementById('tc-fall').checked,estop:document.getElementById('tc-estop').checked,safe:document.getElementById('tc-safe').checked,timeout:300};const scores=computeScores(tele,task.task_type);const strategy=pick(STRATS[task.task_type]||['default_policy']);const accepted=scores.popw>=.5;const teleHash=hx(JSON.stringify(tele)+taskId);const payload=JSON.stringify({op:'humanoidOS::submitPoPW',v:1,task_id:taskId,robot_id:task.robot_id,telemetry_hash:teleHash,strategy,scores:{popw:scores.popw,stability:scores.stability,completion:scores.completion,efficiency:scores.efficiency},accepted,validator:W3.address,netuid:10,at:now()});alEl.innerHTML=`<div class="al ali"><span class="spin"></span> // POPW: ${scores.popw} — SIGNING…</div>`;btn.disabled=true;txEl.style.display='none';alog(`PoPW: task ${taskId.slice(0,14)}… Score:${scores.popw}`,'i');try{const{txHash,blockNum,blockHash}=await sendTx(payload);task.status=accepted?'completed':'failed';task.popw_score=scores.popw;if(task.robot_id){DB.memory.push({entry_id:DB.memory.length+1,robot_id:task.robot_id,task_id:taskId,task_type:task.task_type,instruction:task.instruction,popw_score:scores.popw,stability:scores.stability,completion:scores.completion,efficiency:scores.efficiency,validator:W3.address,block:blockNum,at:now(),strategy});updRep(task.robot_id,scores,accepted);}alEl.innerHTML=`<div class="al ${accepted?'als':'ale'}">// PoPW ${accepted?'ACCEPTED':'REJECTED'}<br/><span style="font-size:.6rem">SCORE: <strong style="color:${scoreC(scores.popw)}">${scores.popw}</strong> | STABILITY:${scores.stability} COMPLETION:${scores.completion} EFF:${scores.efficiency}</span></div>`;txEl.style.display='block';txEl.innerHTML=txHTML(txHash,blockNum,blockHash,accepted);alog(`// PoPW ${accepted?'ACCEPTED':'REJECTED'} | ${scores.popw} | #${blockNum}`,'ok');toast(`PoPW ${accepted?'ACCEPTED':'REJECTED'}: ${scores.popw}`,'s');renderTasks();renderDash();renderLB();updExecSel();}catch(err){alEl.innerHTML=`<div class="al ale">// ERROR: ${err.message}</div>`;alog(`ERR: ${err.message}`,'e');toast('TX FAILED','e');}btn.disabled=false;}
+function preFaucet(){if(!W3.address){toast('Connect wallet first','e');return;}document.getElementById('faucet-addr').value=W3.address;}
+async function reqFaucet(){const addr=document.getElementById('faucet-addr').value.trim();const alEl=document.getElementById('faucet-al');if(!addr||addr.length<10){alEl.innerHTML='<div class="al ale">// INVALID ADDRESS</div>';return;}alEl.innerHTML='<div class="al ali"><span class="spin"></span> // CONTACTING FAUCET…</div>';try{const res=await fetch('https://faucet.testnet.konnex.world/drip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr})});if(res.ok){const data=await res.json().catch(()=>({}));alEl.innerHTML=`<div class="al als">// 100 TESTKНХ SENT<br/><span style="font-size:.6rem">TX: ${(data.hash||data.txHash||'pending').slice(0,30)}…</span></div>`;toast('100 testKNX SENT','s');}else{const err=await res.text().catch(()=>'');alEl.innerHTML=`<div class="al alw">// FAUCET: ${err.slice(0,100)}<br/><a href="https://faucet.testnet.konnex.world" target="_blank" style="color:var(--orange)">faucet.testnet.konnex.world ↗</a></div>`;}}catch(e){alEl.innerHTML=`<div class="al alw">// VISIT DIRECTLY:<br/><a href="https://faucet.testnet.konnex.world" target="_blank" style="color:var(--orange)">faucet.testnet.konnex.world ↗</a><br/><span style="font-size:.6rem;color:var(--muted2)">PASTE: ${addr}</span></div>`;}}
+function queryMem(){const rid=document.getElementById('m-robot').value;const type=document.getElementById('m-type').value;const min=parseFloat(document.getElementById('m-min').value)||0;const tbody=document.getElementById('mem-tb');const sumEl=document.getElementById('m-sum');if(!rid){tbody.innerHTML='<tr><td colspan="9" class="empty">// SELECT A ROBOT FIRST</td></tr>';sumEl.style.display='none';return;}let entries=DB.memory.filter(m=>m.robot_id===rid);if(type)entries=entries.filter(m=>m.task_type===type);if(min>0)entries=entries.filter(m=>m.popw_score>=min);entries=[...entries].reverse();if(entries.length){sumEl.style.display='grid';document.getElementById('ms-tot').textContent=entries.length;document.getElementById('ms-avg').textContent=(entries.reduce((s,e)=>s+e.popw_score,0)/entries.length).toFixed(3);document.getElementById('ms-best').textContent=Math.max(...entries.map(e=>e.popw_score)).toFixed(3);document.getElementById('ms-worst').textContent=Math.min(...entries.map(e=>e.popw_score)).toFixed(3);}else{sumEl.style.display='none';}if(!entries.length){tbody.innerHTML='<tr><td colspan="9" class="empty">// NO ENTRIES FOUND</td></tr>';return;}tbody.innerHTML=entries.map(e=>`<tr><td class="mono">${sid(e.task_id)}</td><td><span class="b bo">${e.task_type.toUpperCase()}</span></td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.instruction}</td><td><span style="color:${scoreC(e.popw_score)};font-family:var(--mono);font-weight:700">${e.popw_score.toFixed(3)}</span>${barH(e.popw_score)}</td><td class="mono">${e.stability.toFixed(2)}</td><td class="mono">${e.completion.toFixed(2)}</td><td class="mono">${e.efficiency.toFixed(2)}</td><td style="font-size:.61rem;color:var(--muted2)">${(e.strategy||'—').replace(/_/g,' ')}</td><td class="mono">#${e.block}</td></tr>`).join('');}
+function renderDash(){const comp=DB.tasks.filter(t=>t.status==='completed').length;const open=DB.tasks.filter(t=>t.status==='open').length;const rew=DB.tasks.filter(t=>t.status==='completed').reduce((s,t)=>s+t.reward_knx,0);const avg=DB.memory.length>0?(DB.memory.reduce((s,m)=>s+m.popw_score,0)/DB.memory.length):null;document.getElementById('d-robots').textContent=DB.robots.length;document.getElementById('d-done').textContent=comp;document.getElementById('d-open').textContent=open;document.getElementById('d-mem').textContent=DB.memory.length;document.getElementById('d-avg').textContent=avg!=null?avg.toFixed(3):'—';document.getElementById('d-rew').textContent=rew.toFixed(1);const tbody=document.getElementById('d-popw');const recent=[...DB.memory].reverse().slice(0,8);tbody.innerHTML=!recent.length?'<tr><td colspan="5" class="empty">// NO EVENTS YET</td></tr>':recent.map(m=>{const r=DB.robots.find(x=>x.robot_id===m.robot_id);return `<tr><td>${r?.name||sid(m.robot_id)}</td><td><span class="b bo">${m.task_type.toUpperCase()}</span></td><td><span style="color:${scoreC(m.popw_score)};font-family:var(--mono);font-weight:700">${m.popw_score.toFixed(3)}</span>${barH(m.popw_score)}</td><td class="mono">#${m.block}</td><td><a href="${EXPL}/tx/${m.task_id||''}" target="_blank" style="color:var(--orange);font-family:var(--mono);font-size:.59rem">TX ↗</a></td></tr>`;}).join('');const dist={};DB.tasks.forEach(t=>{dist[t.task_type]=(dist[t.task_type]||0)+1;});const distEl=document.getElementById('d-dist');distEl.innerHTML=!Object.keys(dist).length?'<div class="empty" style="padding:.4rem;font-size:.61rem;background:var(--panel)">// NO TASKS</div>':Object.entries(dist).map(([tp,cnt])=>`<div style="flex:1;min-width:80px;background:var(--panel2);padding:.7rem;text-align:center;border-right:1px solid var(--border2)"><div style="font-family:var(--display);font-size:1.5rem;color:var(--orange)">${cnt}</div><div style="font-family:var(--mono);font-size:.54rem;color:var(--muted2);text-transform:uppercase;letter-spacing:1px">${tp.replace(/_/g,' ')}</div></div>`).join('');const trendEl=document.getElementById('d-trend');const mem20=[...DB.memory].slice(-20);trendEl.innerHTML=!mem20.length?'<div class="empty" style="font-size:.61rem">// NO DATA</div>':mem20.map(m=>{const h=Math.max(5,Math.round(m.popw_score*46));return `<div class="mbar" style="height:${h}px;background:${scoreC(m.popw_score)}" title="${m.task_type}: ${m.popw_score.toFixed(3)}"></div>`;}).join('');}
+function renderRobots(){const grid=document.getElementById('robots-grid');if(!DB.robots.length){grid.innerHTML='<div class="empty">// NO HUMANOIDS REGISTERED<br/><span style="font-size:.61rem">CONNECT WALLET → FILL FORM → SIGN & REGISTER</span></div>';return;}grid.innerHTML=DB.robots.map(r=>{const rep=DB.rep[r.robot_id]||{score:0,total:0,success:0};const mem=DB.memory.filter(m=>m.robot_id===r.robot_id).length;const succ=rep.total>0?((rep.success/rep.total)*100).toFixed(0)+'%':'—';const emoji=RTYPES[r.type]||'🤖';const{l}=tierOf(rep.score);return `<div class="rcard" onclick="viewMem('${r.robot_id}')"><div class="rcid">// ${r.robot_id.slice(0,20)}…</div><div class="rcname">${emoji} ${r.name}</div><div class="rctype">${r.type.replace(/_/g,' ')} // ${r.dof} DOF // ${r.act}</div>${barH(rep.score)}<div class="rcstats mt1"><div class="rst"><div class="rstv co">${rep.score.toFixed(3)}</div><div class="rstl">SCORE</div></div><div class="rst"><div class="rstv cg">${rep.total}</div><div class="rstl">TASKS</div></div><div class="rst"><div class="rstv cc">${mem}</div><div class="rstl">LOGS</div></div></div><div style="font-family:var(--mono);font-size:.54rem;color:var(--muted);margin-top:.5rem">${l} // ${r.model||'?'} // SUCCESS:${succ} // <a href="${EXPL}/tx/${r.tx}" target="_blank" style="color:var(--orange)">TX ↗</a></div></div>`;}).join('');}
+function viewMem(rid){document.getElementById('m-robot').value=rid;go('memory');setTimeout(queryMem,100);}
+function renderTasks(){const tbody=document.getElementById('tasks-tb');if(!DB.tasks.length){tbody.innerHTML='<tr><td colspan="7" class="empty">// NO TASKS SUBMITTED</td></tr>';return;}tbody.innerHTML=[...DB.tasks].reverse().map((t,i)=>{const sc=t.popw_score!=null?`<span style="color:${scoreC(t.popw_score)};font-family:var(--mono);font-weight:700">${t.popw_score.toFixed(3)}</span>${barH(t.popw_score)}`:'<span style="color:var(--muted2);font-family:var(--mono)">PENDING</span>';return `<tr><td class="mono" style="color:var(--muted)">${DB.tasks.length-i}</td><td><span class="b bo">${t.task_type.toUpperCase()}</span></td><td style="max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.71rem" title="${t.instruction}">${t.instruction}</td><td class="ca" style="font-family:var(--mono)">${t.reward_knx} KNX</td><td>${sc}</td><td>${statusBadge(t.status)}</td><td><a href="${EXPL}/tx/${t.tx}" target="_blank" style="color:var(--orange);font-family:var(--mono);font-size:.59rem">#${t.block||'?'} ↗</a></td></tr>`;}).join('');}
+function renderLB(){const lb=Object.entries(DB.rep).filter(([,r])=>r.total>0).sort(([,a],[,b])=>b.score-a.score).slice(0,20);const tbody=document.getElementById('lb-tb');if(!lb.length){tbody.innerHTML='<tr><td colspan="8" class="empty">// NO RANKED ROBOTS YET</td></tr>';return;}tbody.innerHTML=lb.map(([rid,rep],i)=>{const robot=DB.robots.find(r=>r.robot_id===rid);const sr=rep.total>0?((rep.success/rep.total)*100).toFixed(1)+'%':'—';const rank=i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1).padStart(2,'0');const mem=DB.memory.filter(m=>m.robot_id===rid).slice(-5);const trend=mem.map(m=>`<div style="width:5px;height:${Math.max(3,Math.round(m.popw_score*16))}px;background:${scoreC(m.popw_score)}"></div>`).join('');return `<tr><td style="font-family:var(--mono);font-weight:700">${rank}</td><td class="mono">${rid.slice(0,12)}…</td><td style="font-family:var(--mono);color:var(--orange)">${robot?.name||'—'}</td><td><span style="color:${scoreC(rep.score)};font-family:var(--mono);font-weight:700">${rep.score.toFixed(4)}</span>${barH(rep.score)}</td><td>${tierBadge(rep.score)}</td><td class="mono">${rep.total}</td><td class="cg" style="font-family:var(--mono)">${sr}</td><td><div style="display:flex;align-items:flex-end;gap:2px;height:16px">${trend||'—'}</div></td></tr>`;}).join('');}
+function updSels(){
+  ['t-robot','m-robot','jv-robot'].forEach(id=>{
+    const sel=document.getElementById(id);if(!sel)return;
+    const base=id==='t-robot'?'<option value="">Any humanoid</option>':id==='jv-robot'?'<option value="">— Select registered robot —</option>':'<option value="">Select robot</option>';
+    sel.innerHTML=base+DB.robots.map(r=>`<option value="${r.robot_id}">${r.name} (${r.type.replace(/_/g,' ')})</option>`).join('');
+  });
+}
+function updExecSel(){const sel=document.getElementById('exec-sel');if(!sel)return;const open=DB.tasks.filter(t=>t.status==='open');sel.innerHTML='<option value="">— Select task —</option>'+open.map(t=>`<option value="${t.task_id}">[${t.task_type.toUpperCase()}] ${t.instruction.slice(0,38)}… (${t.reward_knx} KNX)</option>`).join('');}
+
+// ═══════════════════════════════════════
+//  JOINT CONTROL VISUALIZER
+// ═══════════════════════════════════════
+
+// Joint definitions per DOF
+const JOINT_DEFS = {
+  '28': [
+    {id:'lshoulder', label:'L Shoulder',  min:-90, max:180, svg:'j-larm-upper',  lbl:'lbl-lshoulder', origin:'41 68',  axis:'rotate'},
+    {id:'lelbow',    label:'L Elbow',     min:0,   max:145, svg:'j-larm-lower',  lbl:'lbl-lelbow',    origin:'41 124', axis:'rotate'},
+    {id:'rshoulder', label:'R Shoulder',  min:-90, max:180, svg:'j-rarm-upper',  lbl:'lbl-rshoulder', origin:'179 68', axis:'rotate'},
+    {id:'relbow',    label:'R Elbow',     min:0,   max:145, svg:'j-rarm-lower',  lbl:'lbl-relbow',    origin:'179 124',axis:'rotate'},
+    {id:'lhip',      label:'L Hip',       min:-30, max:120, svg:'j-lleg-upper',  lbl:'lbl-lhip',      origin:'88 166', axis:'rotate'},
+    {id:'lknee',     label:'L Knee',      min:0,   max:130, svg:'j-lleg-lower',  lbl:'lbl-lknee',     origin:'88 230', axis:'rotate'},
+    {id:'rhip',      label:'R Hip',       min:-30, max:120, svg:'j-rleg-upper',  lbl:'lbl-rhip',      origin:'132 166',axis:'rotate'},
+    {id:'rknee',     label:'R Knee',      min:0,   max:130, svg:'j-rleg-lower',  lbl:'lbl-rknee',     origin:'132 230',axis:'rotate'},
+  ],
+  '36': [],
+  '43': [],
+  '55': [],
+};
+// Fill 36/43/55 with 28 joints + extra wrist/ankle/torso joints
+['36','43','55'].forEach(d=>{
+  JOINT_DEFS[d]=[...JOINT_DEFS['28']];
+  if(d>='36') JOINT_DEFS[d].push(
+    {id:'lwrist',  label:'L Wrist',  min:-80, max:80,  svg:null, lbl:null},
+    {id:'rwrist',  label:'R Wrist',  min:-80, max:80,  svg:null, lbl:null},
+    {id:'lankle',  label:'L Ankle',  min:-40, max:40,  svg:null, lbl:null},
+    {id:'rankle',  label:'R Ankle',  min:-40, max:40,  svg:null, lbl:null},
+    {id:'torso',   label:'Torso Rot',min:-45, max:45,  svg:'btorso', lbl:null},
+    {id:'neck',    label:'Neck',     min:-50, max:50,  svg:null, lbl:null},
+    {id:'lhip_lat',label:'L Hip Lat',min:-30, max:30,  svg:null, lbl:null},
+    {id:'rhip_lat',label:'R Hip Lat',min:-30, max:30,  svg:null, lbl:null},
+  );
+  if(d>='43') JOINT_DEFS[d].push(
+    {id:'lshoulder_lat',label:'L Shldr Lat',min:-90,max:90,svg:null,lbl:null},
+    {id:'rshoulder_lat',label:'R Shldr Lat',min:-90,max:90,svg:null,lbl:null},
+    {id:'lfinger1',label:'L Finger Flex',min:0,max:90,svg:null,lbl:null},
+    {id:'rfinger1',label:'R Finger Flex',min:0,max:90,svg:null,lbl:null},
+    {id:'spine',   label:'Spine Flex',min:-30,max:30,svg:null,lbl:null},
+    {id:'pelvis',  label:'Pelvis Tilt',min:-20,max:20,svg:null,lbl:null},
+    {id:'lhip_rot',label:'L Hip Rot',min:-40,max:40,svg:null,lbl:null},
+  );
+  if(d>='55') JOINT_DEFS[d].push(
+    {id:'lthumb',  label:'L Thumb',  min:0,max:60,svg:null,lbl:null},
+    {id:'rthumb',  label:'R Thumb',  min:0,max:60,svg:null,lbl:null},
+    {id:'leye_h',  label:'L Eye H',  min:-30,max:30,svg:null,lbl:null},
+    {id:'reye_h',  label:'R Eye H',  min:-30,max:30,svg:null,lbl:null},
+    {id:'jaw',     label:'Jaw',      min:0,max:25,svg:null,lbl:null},
+    {id:'chest',   label:'Chest Exp',min:-10,max:10,svg:null,lbl:null},
+    {id:'lfoot',   label:'L Foot Rot',min:-20,max:20,svg:null,lbl:null},
+    {id:'rfoot',   label:'R Foot Rot',min:-20,max:20,svg:null,lbl:null},
+    {id:'ltoe',    label:'L Toe',    min:-20,max:40,svg:null,lbl:null},
+    {id:'rtoe',    label:'R Toe',    min:-20,max:40,svg:null,lbl:null},
+    {id:'lkneecap',label:'L Knee Lat',min:-10,max:10,svg:null,lbl:null},
+    {id:'rkneecap',label:'R Knee Lat',min:-10,max:10,svg:null,lbl:null},
+  );
+});
+
+const JV = { robotId:null, angles:{}, joints:[], policies:[] };
+
+function loadJointRobot(){
+  const rid = document.getElementById('jv-robot').value;
+  if(!rid){ return; }
+  const robot = DB.robots.find(r=>r.robot_id===rid);
+  if(!robot) return;
+
+  JV.robotId = rid;
+  JV.joints  = JOINT_DEFS[robot.dof||'28'] || JOINT_DEFS['28'];
+  JV.angles  = {};
+  JV.joints.forEach(j=>{ JV.angles[j.id]=0; });
+
+  // Update robot info panel
+  document.getElementById('jv-robot-info').style.display='block';
+  document.getElementById('jv-avatar').textContent = RTYPES[robot.type]||'🤖';
+  document.getElementById('jv-name').textContent   = robot.name;
+  document.getElementById('jv-meta').textContent   = `${robot.type.replace(/_/g,' ')} // ${robot.dof} DOF // ${robot.act}`;
+  const rep = DB.rep[rid]||{score:0};
+  document.getElementById('jv-score').textContent  = rep.score.toFixed(3);
+  document.getElementById('jv-submit-btn').disabled = false;
+
+  renderJointSliders();
+  updateSVG();
+  updateReadout();
+}
+
+function renderJointSliders(){
+  const container = document.getElementById('joint-sliders');
+  if(!JV.joints.length){ container.innerHTML='<div class="empty">// NO JOINTS DEFINED</div>'; return; }
+
+  container.innerHTML = JV.joints.map(j=>`
+    <div style="margin-bottom:.7rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.2rem">
+        <label style="font-family:var(--mono);font-size:.6rem;color:var(--muted2);text-transform:uppercase;letter-spacing:1px">${j.label}</label>
+        <span id="val-${j.id}" style="font-family:var(--mono);font-size:.68rem;color:var(--orange);min-width:40px;text-align:right">0°</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <span style="font-family:var(--mono);font-size:.55rem;color:var(--muted);min-width:28px">${j.min}°</span>
+        <input type="range" min="${j.min}" max="${j.max}" value="0" step="1"
+          id="sl-${j.id}"
+          oninput="setJoint('${j.id}',this.value)"
+          style="flex:1;height:3px;background:var(--border2);cursor:crosshair;clip-path:none;
+                 -webkit-appearance:none;outline:none;border:none;padding:0;border-radius:0"/>
+        <span style="font-family:var(--mono);font-size:.55rem;color:var(--muted);min-width:28px;text-align:right">${j.max}°</span>
+      </div>
+    </div>
+  `).join('');
+
+  // Style range inputs
+  const style = document.createElement('style');
+  style.textContent=`
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;background:var(--orange);cursor:crosshair;border:1px solid var(--amber);}
+    input[type=range]::-webkit-slider-runnable-track{background:var(--border2);height:3px;}
+    input[type=range]:focus{outline:none;}
+  `;
+  if(!document.getElementById('range-style')){
+    style.id='range-style';
+    document.head.appendChild(style);
+  }
+}
+
+function setJoint(id, val){
+  JV.angles[id] = parseFloat(val);
+  const valEl = document.getElementById('val-'+id);
+  if(valEl) valEl.textContent = Math.round(val)+'°';
+  updateSVG();
+  updateReadout();
+}
+
+function updateSVG(){
+  JV.joints.forEach(j=>{
+    if(!j.svg) return;
+    const el = document.getElementById(j.svg);
+    if(!el) return;
+    const angle = JV.angles[j.id]||0;
+    if(j.axis==='rotate' && j.origin){
+      el.setAttribute('transform',`rotate(${angle},${j.origin})`);
+    }
+    // Update label
+    if(j.lbl){
+      const lbl = document.getElementById(j.lbl);
+      if(lbl) lbl.textContent = Math.round(angle)+'°';
+    }
+    // Highlight active joints
+    const jointCircleId = 'j-'+j.id;
+    const jc = document.getElementById(jointCircleId);
+    if(jc){
+      const abs = Math.abs(angle);
+      jc.setAttribute('stroke', abs>10?'var(--amber)':'var(--orange)');
+      jc.setAttribute('stroke-width', abs>30?'3':'2');
+    }
+  });
+}
+
+function updateReadout(){
+  const el = document.getElementById('jv-readout');
+  if(!el) return;
+  const activeJoints = JV.joints.filter(j=>Math.abs(JV.angles[j.id]||0)>0.5);
+  if(!activeJoints.length){
+    el.innerHTML='<div style="font-family:var(--mono);font-size:.63rem;color:var(--muted2);grid-column:1/-1">// ALL JOINTS AT ZERO POSITION</div>';
+    return;
+  }
+  el.innerHTML = JV.joints.map(j=>{
+    const angle = JV.angles[j.id]||0;
+    const pct   = ((angle - j.min)/(j.max - j.min)*100).toFixed(0);
+    const color = Math.abs(angle)>60?'var(--amber)':Math.abs(angle)>20?'var(--orange)':'var(--green)';
+    return `<div style="background:var(--panel2);border:1px solid var(--border);padding:.45rem .6rem">
+      <div style="display:flex;justify-content:space-between;margin-bottom:.25rem">
+        <span style="font-family:var(--mono);font-size:.58rem;color:var(--muted2)">${j.label}</span>
+        <span style="font-family:var(--mono);font-size:.65rem;color:${color};font-weight:700">${Math.round(angle)}°</span>
+      </div>
+      <div style="height:2px;background:var(--border2)"><div style="height:100%;width:${pct}%;background:${color};transition:width .2s"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function randomizeJoints(){
+  JV.joints.forEach(j=>{
+    const angle = Math.floor(Math.random()*(j.max-j.min)+j.min);
+    JV.angles[j.id] = angle;
+    const sl = document.getElementById('sl-'+j.id);
+    if(sl) sl.value = angle;
+    const valEl = document.getElementById('val-'+j.id);
+    if(valEl) valEl.textContent = angle+'°';
+  });
+  updateSVG(); updateReadout();
+}
+
+function resetJoints(){
+  JV.joints.forEach(j=>{
+    JV.angles[j.id]=0;
+    const sl=document.getElementById('sl-'+j.id);
+    if(sl) sl.value=0;
+    const valEl=document.getElementById('val-'+j.id);
+    if(valEl) valEl.textContent='0°';
+  });
+  updateSVG(); updateReadout();
+}
+
+async function submitJointPolicy(){
+  if(!guard()) return;
+  if(!JV.robotId){ toast('Select a robot first','e'); return; }
+
+  const robot   = DB.robots.find(r=>r.robot_id===JV.robotId);
+  const alEl    = document.getElementById('jv-al');
+  const txEl    = document.getElementById('jv-tx');
+  const btn     = document.getElementById('jv-submit-btn');
+
+  const policyId = hx(JSON.stringify(JV.angles)+JV.robotId+Date.now());
+
+  // Detect motion type from active joints
+  const activeLegs  = ['lhip','lknee','rhip','rknee'].some(id=>Math.abs(JV.angles[id]||0)>5);
+  const activeArms  = ['lshoulder','lelbow','rshoulder','relbow'].some(id=>Math.abs(JV.angles[id]||0)>5);
+  const motionType  = activeLegs && activeArms ? 'whole_body' : activeLegs ? 'locomotion' : 'manipulation';
+
+  const payload = JSON.stringify({
+    op:'humanoidOS::submitJointPolicy',
+    v:1,
+    policy_id: policyId,
+    robot_id:  JV.robotId,
+    motion_type: motionType,
+    joint_angles: JV.angles,
+    dof: robot?.dof||'28',
+    validator: W3.address,
+    netuid:10,
+    at: now(),
+  });
+
+  alEl.innerHTML='<div class="al ali"><span class="spin"></span> // SIGNING JOINT POLICY…</div>';
+  btn.disabled=true; txEl.style.display='none';
+  alog(`Joint policy submit: ${motionType} — ${Object.keys(JV.angles).length} joints`,'i');
+
+  try{
+    const{txHash,blockNum,blockHash}=await sendTx(payload);
+
+    // Key joints summary
+    const keyJoints = JV.joints
+      .filter(j=>Math.abs(JV.angles[j.id]||0)>5)
+      .map(j=>`${j.label}: ${Math.round(JV.angles[j.id])}°`)
+      .slice(0,4)
+      .join(', ');
+
+    JV.policies.push({
+      policy_id: policyId,
+      robot_id:  JV.robotId,
+      robot_name:robot?.name||'—',
+      motion_type: motionType,
+      key_joints: keyJoints||'all zero',
+      tx: txHash,
+      block: blockNum,
+      status:'submitted',
+      at: now(),
+    });
+
+    alEl.innerHTML=`<div class="al als">// JOINT POLICY SUBMITTED ON-CHAIN<br/><span style="font-size:.6rem">Type: ${motionType.toUpperCase()} | Joints: ${Object.keys(JV.angles).length} | ID: ${policyId.slice(0,22)}…</span></div>`;
+    txEl.style.display='block';
+    txEl.innerHTML=txHTML(txHash,blockNum,blockHash,true);
+    alog(`// POLICY ON-CHAIN: ${motionType} | Block #${blockNum}`,'ok');
+    toast('JOINT POLICY SUBMITTED','s');
+    renderJvPolicies();
+
+  }catch(err){
+    alEl.innerHTML=`<div class="al ale">// ERROR: ${err.message}</div>`;
+    alog(`ERR: ${err.message}`,'e');
+    toast('TX FAILED','e');
+  }
+  btn.disabled=false;
+}
+
+function renderJvPolicies(){
+  const tbody=document.getElementById('jv-policies-tb');
+  if(!JV.policies.length){ tbody.innerHTML='<tr><td colspan="7" class="empty">// NO POLICIES SUBMITTED YET</td></tr>'; return; }
+  tbody.innerHTML=[...JV.policies].reverse().map(p=>`<tr>
+    <td class="mono">${p.policy_id.slice(0,12)}…</td>
+    <td style="color:var(--orange)">${p.robot_name}</td>
+    <td><span class="b bo">${p.motion_type.toUpperCase()}</span></td>
+    <td style="font-size:.65rem;color:var(--muted2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.key_joints}</td>
+    <td><a href="${EXPL}/tx/${p.tx}" target="_blank" class="txlnk" style="font-size:.62rem">${p.tx.slice(0,12)}… ↗</a></td>
+    <td class="mono">#${p.block||'?'}</td>
+    <td><span class="b bg">SUBMITTED</span></td>
+  </tr>`).join('');
+}
+
+// ════════════════════════════════════════════
+//  HUMANOID VALIDATOR SYSTEM
+// ════════════════════════════════════════════
+const HV = { validators:[], challenges:[] };
+
+function hRenderValidatorPage(){
+  hRenderValidatorsTable();
+  hRenderChallengesTable();
+  hUpdateStats();
+}
+
+function hUpdateStats(){
+  const el=id=>document.getElementById(id);
+  el('hval-count').textContent = HV.validators.length;
+  el('hval-tasks').textContent = HV.validators.reduce((s,v)=>s+v.tasks_scored,0);
+  el('hval-chal').textContent  = HV.challenges.filter(c=>c.status==='open').length;
+  el('hval-slash').textContent = HV.validators.reduce((s,v)=>s+v.slashed,0).toFixed(1);
+  const rates = HV.validators.filter(v=>v.tasks_scored>0).map(v=>v.consensus_rate);
+  el('hval-cons').textContent  = rates.length?(rates.reduce((a,b)=>a+b,0)/rates.length*100).toFixed(0)+'%':'—';
+}
+
+function hAutofillValidator(){
+  document.getElementById('hv-stake').value = 100;
+  document.getElementById('hv-name').value  = 'humanoid-validator-'+Math.floor(rand(1000,9999));
+}
+
+function hRegisterValidator(){
+  if(!W3.address){toast('Connect wallet first','e');openModal();return;}
+  const stake=parseFloat(document.getElementById('hv-stake').value)||0;
+  const name =document.getElementById('hv-name').value.trim();
+  const alEl =document.getElementById('hv-reg-al');
+  const txEl =document.getElementById('hv-reg-tx');
+  if(stake<50){alEl.innerHTML='<div class="al ale">// MINIMUM STAKE IS 50 TESTKНХ</div>';return;}
+  if(!name){alEl.innerHTML='<div class="al ale">// NODE ID IS REQUIRED</div>';return;}
+  if(HV.validators.find(v=>v.address===W3.address)){alEl.innerHTML='<div class="al alw">// ALREADY REGISTERED AS VALIDATOR</div>';return;}
+  alEl.innerHTML='<div class="al ali"><span class="spin"></span> // SIGNING STAKE EXTRINSIC…</div>';
+  setTimeout(()=>{
+    const valId=hx('hval::'+W3.address+'::'+Date.now());
+    const block=(W3.blockNum||12000)+Math.floor(rand(1,4));
+    const txHash=hx(valId+block);
+    HV.validators.push({val_id:valId,node_id:name,address:W3.address,stake,
+      tasks_scored:0,consensus_rate:1.0,reputation:1.0,slashed:0,
+      status:'active',registered_at:now(),tx:txHash,block});
+    alEl.innerHTML=`<div class="al als">// VALIDATOR REGISTERED<br/><span style="font-size:.6rem">STAKE: ${stake} testKNX | NODE: ${name}</span></div>`;
+    txEl.style.display='block';
+    txEl.innerHTML=`<div class="txr"><span class="txk">STATUS</span><span class="txv cg">// STAKED & ACTIVE</span></div>
+      <div class="txr"><span class="txk">TX</span><span class="txv"><a href="https://subnets.testnet.konnex.world/tx/${txHash}" target="_blank" class="txlnk">${txHash.slice(0,22)}… ↗</a></span></div>
+      <div class="txr"><span class="txk">BLOCK</span><span class="txv">#${block}</span></div>`;
+    hRenderValidatorsTable();hUpdateStats();
+    alog(`Validator registered: ${name} — staked ${stake} testKNX`,'ok');
+    toast(`${name} STAKED & ACTIVE`,'s');
+  },1200);
+}
+
+function hLoadPendingTask(){
+  const open=DB.tasks.filter(t=>t.status==='open');
+  if(!open.length){toast('No pending tasks','i');return;}
+  document.getElementById('hv-task-id').value=open[open.length-1].task_id;
+  toast('Task loaded — fill telemetry and submit','i');
+}
+
+function hGetTelemetry(){
+  return{
+    cmp:   parseFloat(document.getElementById('hvt-cmp').value)||0,
+    el:    parseFloat(document.getElementById('hvt-el').value)||0,
+    stab:  parseFloat(document.getElementById('hvt-stab').value)||0,
+    falls: parseInt(document.getElementById('hvt-falls').value)||0,
+    done:  document.getElementById('hvt-done').checked,
+    fall:  document.getElementById('hvt-fall').checked,
+    safe:  document.getElementById('hvt-safe').checked,
+    timeout:300,
+  };
+}
+
+function hComputeScore(tele,taskType){
+  let stab=tele.stab;
+  if(tele.fall)    stab-=.50;
+  if(tele.falls>0) stab-=Math.min(.3,tele.falls*.15);
+  stab=Math.max(0,Math.min(1,stab));
+  let comp=tele.done?1:tele.cmp/100;
+  if(taskType==='balance'&&tele.fall) comp*=.5;
+  comp=Math.min(1,Math.max(0,comp));
+  let eff=1;
+  if(tele.el&&tele.timeout){const r=tele.el/tele.timeout;if(r>1)eff-=Math.min(.4,(r-1)*.4);else if(r>.8)eff-=.10;}
+  if(!tele.safe) eff-=.20;
+  eff=Math.max(0,eff);
+  const popw=+(stab*WS.stability+comp*WS.completion+eff*WS.efficiency).toFixed(4);
+  return{popw,stability:+stab.toFixed(4),completion:+comp.toFixed(4),efficiency:+eff.toFixed(4)};
+}
+
+function hPreviewScore(){
+  const tele=hGetTelemetry();
+  const taskId=document.getElementById('hv-task-id').value.trim();
+  const task=DB.tasks.find(t=>t.task_id===taskId);
+  const scores=hComputeScore(tele,task?.task_type||'locomotion');
+  document.getElementById('hv-preview').style.display='block';
+  const sc=s=>s>=.8?'var(--green)':s>=.5?'var(--amber)':'var(--red)';
+  document.getElementById('hp-popw').textContent=scores.popw.toFixed(3);
+  document.getElementById('hp-popw').style.color=sc(scores.popw);
+  document.getElementById('hp-stab').textContent=scores.stability.toFixed(3);
+  document.getElementById('hp-comp').textContent=scores.completion.toFixed(3);
+  document.getElementById('hp-eff').textContent=scores.efficiency.toFixed(3);
+  const accepted=scores.popw>=.5;
+  document.getElementById('hp-verdict').innerHTML=
+    `<span style="color:${accepted?'var(--green)':'var(--red)'};font-family:var(--mono);font-weight:700">
+      ${accepted?'✅ ACCEPTED':'❌ REJECTED'} (threshold: 0.50)</span>`;
+}
+
+function hSubmitScore(){
+  if(!W3.address){toast('Connect wallet first','e');openModal();return;}
+  const taskId=document.getElementById('hv-task-id').value.trim();
+  const alEl=document.getElementById('hv-score-al');
+  const txEl=document.getElementById('hv-score-tx');
+  if(!taskId){alEl.innerHTML='<div class="al ale">// ENTER TASK ID FIRST</div>';return;}
+  const task=DB.tasks.find(t=>t.task_id===taskId);
+  const tele=hGetTelemetry();
+  const scores=hComputeScore(tele,task?.task_type||'locomotion');
+  const block=(W3.blockNum||12000)+Math.floor(rand(1,4));
+  const txHash=hx(taskId+W3.address+block);
+  alEl.innerHTML='<div class="al ali"><span class="spin"></span> // SIGNING SCORE EXTRINSIC…</div>';
+  setTimeout(()=>{
+    const numVal=Math.floor(rand(3,6));
+    const others=Array.from({length:numVal-1},()=>+(scores.popw+rand(-.08,.08)).toFixed(4));
+    const all=[scores.popw,...others];
+    const avg=all.reduce((a,b)=>a+b,0)/all.length;
+    const consRate=all.filter(s=>Math.abs(s-avg)<.15).length/all.length;
+    const consMet=consRate>=.70;
+    const myVal=HV.validators.find(v=>v.address===W3.address);
+    if(myVal){myVal.tasks_scored++;myVal.consensus_rate=+((myVal.consensus_rate*(myVal.tasks_scored-1)+consRate)/myVal.tasks_scored).toFixed(3);}
+    if(task&&consMet){task.status=scores.popw>=.5?'completed':'failed';task.popw_score=+avg.toFixed(4);}
+    alEl.innerHTML=`<div class="al ${consMet?'als':'alw'}">
+      ${consMet?'✅':'⚠'} SCORE SUBMITTED<br/>
+      <span style="font-size:.6rem">YOUR SCORE: <strong>${scores.popw}</strong> | ${numVal} VALIDATORS | CONSENSUS: <strong style="color:${consMet?'var(--green)':'var(--amber)'}">${(consRate*100).toFixed(0)}%</strong> ${consMet?'✅ MET':'⚠ BELOW 70%'}</span>
+    </div>`;
+    txEl.style.display='block';
+    txEl.innerHTML=`<div class="txr"><span class="txk">STATUS</span><span class="txv cg">// SUBMITTED</span></div>
+      <div class="txr"><span class="txk">TX</span><span class="txv"><a href="https://subnets.testnet.konnex.world/tx/${txHash}" target="_blank" class="txlnk">${txHash.slice(0,22)}… ↗</a></span></div>
+      <div class="txr"><span class="txk">BLOCK</span><span class="txv">#${block}</span></div>
+      <div class="txr"><span class="txk">CONSENSUS</span><span class="txv" style="color:${consMet?'var(--green)':'var(--amber)'}">${(consRate*100).toFixed(0)}% (NEED 70%)</span></div>`;
+    hRenderValidatorsTable();hUpdateStats();renderDash();renderTasks();
+    alog(`Validator score: PoPW=${scores.popw} | Consensus=${(consRate*100).toFixed(0)}%`,'ok');
+    toast(`SCORE SUBMITTED — ${(consRate*100).toFixed(0)}% CONSENSUS`,'s');
+  },1500);
+}
+
+function hRaiseChallenge(){
+  if(!W3.address){toast('Connect wallet first','e');openModal();return;}
+  const taskId=document.getElementById('hch-task').value.trim();
+  const reason=document.getElementById('hch-reason').value;
+  const evidence=document.getElementById('hch-evidence').value.trim();
+  const alEl=document.getElementById('hch-al');
+  const txEl=document.getElementById('hch-tx');
+  if(!taskId){alEl.innerHTML='<div class="al ale">// TASK ID IS REQUIRED</div>';return;}
+  alEl.innerHTML='<div class="al ali"><span class="spin"></span> // SIGNING CHALLENGE EXTRINSIC…</div>';
+  setTimeout(()=>{
+    const chalId=hx('hchal::'+taskId+'::'+W3.address+Date.now());
+    const block=(W3.blockNum||12000)+Math.floor(rand(1,4));
+    const txHash=hx(chalId+block);
+    const deadline=new Date(Date.now()+24*60*60*1000).toISOString();
+    HV.challenges.push({challenge_id:chalId,task_id:taskId,reason,
+      evidence:evidence||'No additional evidence',challenger:W3.address,
+      status:'open',deadline,tx:txHash,block,created_at:now()});
+    alEl.innerHTML=`<div class="al als">// CHALLENGE RAISED<br/><span style="font-size:.6rem">24H WINDOW OPEN — VALIDATORS WILL RE-VERIFY</span></div>`;
+    txEl.style.display='block';
+    txEl.innerHTML=`<div class="txr"><span class="txk">STATUS</span><span class="txv ca">// OPEN (24H)</span></div>
+      <div class="txr"><span class="txk">TX</span><span class="txv"><a href="https://subnets.testnet.konnex.world/tx/${txHash}" target="_blank" class="txlnk">${txHash.slice(0,22)}… ↗</a></span></div>
+      <div class="txr"><span class="txk">DEADLINE</span><span class="txv">${deadline.slice(0,19)} UTC</span></div>`;
+    hRenderChallengesTable();hUpdateStats();
+    alog(`Challenge raised for task ${taskId.slice(0,14)}…`,'w');
+    toast('CHALLENGE SUBMITTED — 24H WINDOW OPEN','s');
+  },1300);
+}
+
+function hRenderValidatorsTable(){
+  const tbody=document.getElementById('hvalidators-tb');
+  if(!tbody)return;
+  if(!HV.validators.length){tbody.innerHTML='<tr><td colspan="8" class="empty">// NO VALIDATORS REGISTERED YET</td></tr>';return;}
+  tbody.innerHTML=HV.validators.map(v=>{
+    const isMe=v.address===W3.address;
+    const rc=v.consensus_rate>=.7?'var(--green)':'var(--red)';
+    const rp=v.reputation>=.8?'var(--green)':v.reputation>=.5?'var(--amber)':'var(--red)';
+    return `<tr>
+      <td class="mono" style="font-size:.62rem">${v.address.slice(0,10)}… ${isMe?'<span class="b bc">YOU</span>':''}</td>
+      <td style="color:var(--orange);font-family:var(--mono);font-size:.7rem">${v.node_id}</td>
+      <td class="mono ca">${v.stake} KNX</td>
+      <td class="mono">${v.tasks_scored}</td>
+      <td><span style="color:${rc};font-family:var(--mono);font-weight:700">${(v.consensus_rate*100).toFixed(0)}%</span>
+        <div class="bar"><div class="barf" style="width:${(v.consensus_rate*100).toFixed(0)}%;background:${rc}"></div></div></td>
+      <td><span style="color:${rp};font-family:var(--mono);font-weight:700">${(v.reputation*100).toFixed(0)}%</span>
+        <div class="bar"><div class="barf" style="width:${(v.reputation*100).toFixed(0)}%;background:${rp}"></div></div></td>
+      <td class="mono" style="color:${v.slashed>0?'var(--red)':'var(--muted2)'}">${v.slashed}</td>
+      <td><span class="b bg">ACTIVE</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function hRenderChallengesTable(){
+  const tbody=document.getElementById('hchallenges-tb');
+  if(!tbody)return;
+  if(!HV.challenges.length){tbody.innerHTML='<tr><td colspan="7" class="empty">// NO ACTIVE CHALLENGES</td></tr>';return;}
+  const reasons={score_deviation:'Score dev >15%',ipfs_not_downloaded:'IPFS not downloaded',
+    wrong_stability:'Wrong stability',completion_mismatch:'Completion mismatch',other:'Other'};
+  tbody.innerHTML=[...HV.challenges].reverse().map(c=>{
+    const remaining=Math.max(0,new Date(c.deadline)-Date.now());
+    const h=Math.floor(remaining/3600000);
+    const m=Math.floor((remaining%3600000)/60000);
+    const timeStr=remaining>0?`${h}h ${m}m`:'EXPIRED';
+    const sb={open:'ba',resolved:'bg',rejected:'br'}[c.status]||'bm';
+    return `<tr>
+      <td class="mono" style="font-size:.62rem">${c.challenge_id.slice(0,10)}…</td>
+      <td class="mono" style="font-size:.62rem">${c.task_id.slice(0,10)}…</td>
+      <td style="font-size:.7rem">${reasons[c.reason]||c.reason}</td>
+      <td class="mono" style="font-size:.62rem">${c.challenger.slice(0,10)}…</td>
+      <td style="font-family:var(--mono);font-size:.7rem;color:${remaining>0?'var(--amber)':'var(--red)'}">${timeStr}</td>
+      <td><span class="b ${sb}">${c.status.toUpperCase()}</span></td>
+      <td><a href="https://subnets.testnet.konnex.world/tx/${c.tx}" target="_blank" class="txlnk" style="font-size:.62rem">TX ↗</a></td>
+    </tr>`;
+  }).join('');
+}
+
+(function(){alog('HumanoidOS v0.1.0 initialized','i');alog(`RPC: ${RPC}`,'i');alog('Connect wallet to register humanoid robots on-chain','i');renderDash();})();
+</script>
+</body>
+</html>
